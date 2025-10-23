@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Alchemist's Assistant</title>
+    <!-- Load Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load custom fonts from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for the app's theme */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Dark, magical background color */
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+        }
+        .font-medieval {
+            font-family: 'MedievalSharp', cursive;
+        }
+        /* Card styling for the main container */
+        .card {
+            background-color: #162447;
+            border: 1px solid #4b5a8a;
+            box-shadow: 0 0 20px rgba(75, 90, 138, 0.5);
+        }
+        /* Custom scrollbar for the tape */
+        .tape-container {
+            scrollbar-width: thin;
+            scrollbar-color: #4b5a8a #162447;
+        }
+        .tape-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        .tape-container::-webkit-scrollbar-track {
+            background: #162447;
+        }
+        .tape-container::-webkit-scrollbar-thumb {
+            background-color: #4b5a8a;
+            border-radius: 4px;
+        }
+        /* Individual tape cell styling */
+        .tape-cell {
+            min-width: 4rem; /* 64px */
+            height: 4rem; /* 64px */
+            border: 1px solid #4b5a8a;
+            background-color: #1f4068;
+            font-size: 1.5rem; /* 24px */
+            color: #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        .tape-cell-consumed {
+            background-color: #551011; /* dark red for consumed X */
+            color: #ffcaca;
+            border-color: #a33b3b;
+        }
+        .tape-cell-found {
+            background-color: #1b5e20; /* dark green for found Y */
+            color: #d4ffd4;
+            border-color: #3ba35a;
+        }
+        /* Head indicator style */
+        .head {
+            border-bottom: 4px solid #f9d71c; /* Gold color for the head indicator */
+            transform: translateY(4px);
+            /* z-index to ensure it's visually distinct */
+        }
+        /* Button styling */
+        .btn-primary {
+            background-color: #e43f5a; /* Alchemical red */
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-primary:hover {
+            background-color: #f55a72;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background-color: #1f4068;
+            border: 1px solid #4b5a8a;
+            transition: background-color 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #2a5a8f;
+        }
+        .btn-disabled {
+            background-color: #4b5a8a;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        /* Input field styling */
+        input[type="text"], select {
+            background-color: #1f4068;
+            border: 1px solid #4b5a8a;
+            color: #e0e0e0;
+            border-radius: 0.375rem; /* rounded-md */
+        }
+        /* Styling for the Compendium Modal */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #162447;
+            margin: 5% auto;
+            padding: 24px;
+            border: 1px solid #4b5a8a;
+            width: 80%;
+            max-width: 700px;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(75, 90, 138, 0.7);
+        }
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover {
+            color: #fff;
+        }
+        /* Styling for the item palettes */
+        .palette-item {
+            background-color: #1f4068;
+            border: 1px solid #4b5a8a;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+        .palette-item:hover {
+            background-color: #2a5a8f;
+            transform: scale(1.05);
+        }
+        .palette-item-rune {
+            font-family: 'MedievalSharp', cursive;
+            font-size: 2rem;
+            color: #f9d71c;
+            /* Make rune non-clickable so event targets palette-item */
+            pointer-events: none; 
+        }
+        .palette-item-name {
+            font-size: 0.8rem;
+            color: #e0e0e0;
+            /* Make name non-clickable */
+            pointer-events: none; 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <!-- Main Application Container -->
+    <div id="app" class="w-full max-w-4xl mx-auto">
+        <div class="card rounded-lg p-6 md:p-8">
+            <!-- Header -->
+            <header class="text-center mb-4">
+                <h1 class="font-medieval text-4xl md:text-5xl text-[#f9d71c]">The Alchemist's Assistant</h1>
+                <p class="text-lg text-gray-300 mt-2">A Turing Machine-Powered Crafting Simulator</p>
+            </header>
+
+            <!-- Compendium Button -->
+            <div class="text-center mb-6">
+                <button id="compendiumButton" class="btn-secondary text-sm py-2 px-4 rounded-md">View Alchemist's Compendium</button>
+            </div>
+
+            <!-- Refined Inputs -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                
+                <!-- Inventory Input Area -->
+                <div>
+                    <label for="inventory" class="block mb-2 font-semibold">Inventory</label>
+                    <input type="text" id="inventory" class="w-full p-2 rounded-md mb-3" placeholder="Click items below to add...">
+                    <div id="inventoryPalette" class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        <!-- Inventory palette items will be generated here -->
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        <button id="clearInventory" class="btn-secondary text-sm py-1 px-3 rounded-md">Clear</button>
+                        <button id="saveInventory" class="btn-secondary text-sm py-1 px-3 rounded-md">Save</button>
+                        <button id="loadInventory" class="btn-secondary text-sm py-1 px-3 rounded-md">Load</button>
+                        <button id="applyResult" class="btn-primary text-sm py-1 px-3 rounded-md hidden">Apply Result</button>
+                    </div>
+                </div>
+                
+                <!-- Recipe Input Area -->
+                <div>
+                    <label for="recipeSelect" class="block mb-2 font-semibold">Select Recipe</label>
+                    <select id="recipeSelect" class="w-full p-2 rounded-md mb-3">
+                        <option value="">-- Select a recipe --</option>
+                        <!-- Recipe options will be generated here -->
+                    </select>
+                    <div class="flex items-center gap-3 mb-3">
+                        <label class="font-semibold">Will Produce:</label>
+                        <div id="willProduce" class="p-2 rounded-md bg-[#1f4068] border border-[#4b5a8a] font-mono text-yellow-300">-</div>
+                    </div>
+                    <!-- This input is now populated by the dropdown, but the TM reads from it -->
+                    <label for="recipe" class="block mb-2 font-semibold">Recipe Runes</label>
+                    <input type="text" id="recipe" class="w-full p-2 rounded-md bg-[#1a1a2e] border-gray-600" placeholder="Recipe runes appear here..." readonly>
+                </div>
+            </div>
+
+            <!-- Main Action Button -->
+            <div class="text-center mb-6">
+                <button id="startButton" class="btn-primary font-bold py-3 px-8 rounded-lg text-xl shadow-lg">Begin Transmutation</button>
+            </div>
+
+            <!-- Turing Machine Visualization Area (hidden by default) -->
+            <div id="simulation-area" class="hidden">
+                <div class="mb-4">
+                    <h2 class="font-medieval text-2xl text-center text-[#f9d71c] mb-2">Transmutation Tape</h2>
+                    <!-- Horizontal Scrolling Container for the Tape -->
+                    <div id="tape-container" class="tape-container overflow-x-auto pb-4">
+                        <div id="tape" class="flex justify-center items-end min-w-max px-4">
+                            <!-- Tape cells will be dynamically generated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Display -->
+                <div class="text-center my-4 p-4 rounded-lg bg-[#1f4068] border border-[#4b5a8a]">
+                     <p class="text-lg">Current State: <strong id="currentState" class="text-xl text-yellow-300"></strong></p>
+                     <p id="result" class="text-2xl font-bold mt-2 h-8"></p> <!-- h-8 ensures space is reserved -->
+                 <!-- Accept banner placeholder -->
+                 <div id="acceptBanner" class="hidden mt-3 p-3 rounded-md bg-gradient-to-r from-yellow-400 to-yellow-200 text-black font-bold inline-block"></div>
+                </div>
+
+                <!-- Simulation Controls -->
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4">
+                    <div class="flex items-center gap-2">
+                        <button id="playPauseButton" class="btn-secondary font-bold py-2 px-4 rounded-md">Play</button>
+                        <button id="stepButton" class="btn-secondary font-bold py-2 px-4 rounded-md">Step</button>
+                        <button id="resetButton" class="btn-secondary font-bold py-2 px-4 rounded-md">Reset</button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                         <label for="speed">Speed:</label>
+                         <input type="range" id="speed" min="50" max="1000" value="500" class="w-32 cursor-pointer">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- The Compendium Modal -->
+    <div id="compendiumModal" class="modal">
+        <div class="modal-content">
+            <span id="closeModal" class="close-modal">&times;</span>
+            <h2 class="font-medieval text-3xl text-center text-[#f9d71c] mb-6">The Alchemist's Compendium</h2>
+            <div id="compendiumContent" class="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                <!-- Compendium content will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- The Alchemist's Compendium (Database) ---
+            const ALMANAC = {
+                // Defines all known ingredients
+                runes: {
+                    // T1
+                    'w': { name: 'Willow Wood', description: 'Flexible, resilient, and slightly magical.' },
+                    'r': { name: 'Briar Root', description: 'A tough, thorny root used in bindings.' },
+                    's': { name: 'Shadow Stone', description: 'A rock that seems to drink the light around it.' },
+                    'i': { name: 'Iron Ingot', description: 'Standard, sturdy, reliable metal.' },
+                    'g': { name: 'Earth Gem', description: 'A crystal humming with terrestrial energy.' },
+                    'c': { name: 'Quartz Crystal', description: 'A clear crystal, excellent at holding a simple charge.' },
+                    // T2
+                    'm': { name: 'Moonpetal', description: 'A flower that blooms only in full moonlight.' },
+                    'b': { name: 'Bloodmoss', description: 'A deep red moss that thrives in damp, dark places.' },
+                    'v': { name: 'Voidcap', description: 'A purple mushroom that causes mild, temporary hallucinations.' },
+                    // T3
+                    'f': { name: 'Phoenix Feather', description: 'Warm to the touch. Smells of ash.' },
+                    'h': { name: 'Harpy Talon', description: 'A sharp, hollow talon, surprisingly lightweight.' },
+                    'k': { name: 'Scalekin Hide', description: 'A tough, leathery hide from a river-dwelling reptile.' },
+                    'e': { name: 'Ectoplasm', description: 'A viscous, glowing residue from a restless spirit.' },
+                    'z': { name: 'Azurel Shard', description: 'A piece of sky-blue, conductive, and magical crystal.' },
+                    'o': { name: 'Obsidian', description: 'Volcanic glass, sharp enough to cut shadows.' },
+                    // T4
+                    'l': { name: 'Starlight Shard', description: 'A fragment of a fallen star. It pulses with light.' },
+                    't': { name: 'Temporal Dust', description: 'Shimmering dust that seems to flow backward.' },
+                    'd': { name: 'Dragon\'s Blood', description: 'A potent, volatile, and extremely hot liquid.' }
+                },
+                // Defines all known craftable items
+                recipes: {
+                    // Potions
+                    'P': { 
+                        name: 'Health Potion (P)', 
+                        runes: 'wg', 
+                        description: 'A glowing red potion that restores vitality. Requires: [w, g]'
+                    },
+                    'T': { 
+                        name: 'Stamina Potion (T)', 
+                        runes: 'rb', 
+                        description: 'A murky green liquid that boosts endurance. Requires: [r, b]'
+                    },
+                    'V': { 
+                        name: 'Potion of Invisibility (V)', 
+                        runes: 'sv', 
+                        description: 'When consumed, the user fades from sight. Requires: [s, v]'
+                    },
+                    'Z': { 
+                        name: 'Mana Potion (Z)', 
+                        runes: 'cz', 
+                        description: 'A swirling, electric-blue potion. Requires: [c, z]'
+                    },
+                    // Elixirs
+                    'E': { // 'M' was taken by Moonpetal, so using 'E' for Elixir
+                        name: 'Elixir of Clarity (E)',
+                        runes: 'mmg',
+                        description: 'A clear liquid that sharpens the mind. Requires: [m, m, g]'
+                    },
+                    'K': { 
+                        name: 'Elixir of Stoneflesh (K)', 
+                        runes: 'ik', 
+                        description: 'Makes the skin as tough as hide. Requires: [i, k]'
+                    },
+                    'A': { 
+                        name: 'Elixir of Haste (A)', 
+                        runes: 'fht', 
+                        description: 'A vibrating elixir that grants speed. Requires: [f, h, t]'
+                    },
+                    // Gear
+                    'S': { 
+                        name: 'Shadow-steel Dagger (S)', 
+                        runes: 'sif', 
+                        description: 'A blade for silent work, unnaturally dark. Requires: [s, i, f]'
+                    },
+                    'B': { // 'O' taken by Obsidian, 'B' for 'Body' armor
+                        name: 'Obsidian Scalemail (B)', 
+                        runes: 'okkk', 
+                        description: 'Armor of sharp obsidian scales. Requires: [o, k, k, k]'
+                    },
+                    'H': { 
+                        name: 'Harpy-bone Bow (H)', 
+                        runes: 'whh', 
+                        description: 'A lightweight and fast-firing bow. Requires: [w, h, h]'
+                    },
+                    // Arcane Items
+                    'W': { 
+                        name: 'Spirit Ward (W)', 
+                        runes: 'ec', 
+                        description: 'A charm that repels minor spirits. Requires: [e, c]'
+                    },
+                    'L': { 
+                        name: 'Starfire Charm (L)', 
+                        runes: 'lbg', 
+                        description: 'A charm that glows with captured starlight. Requires: [l, b, g]'
+                    },
+                    'D': { 
+                        name: 'Dragonfire Brew (D)', 
+                        runes: 'rdv', 
+                        description: 'A volatile, unstable, throwable concoction. Requires: [r, d, v]'
+                    },
+                    'O': { 
+                        name: 'Temporal Sphere (O)', 
+                        runes: 'ctt', 
+                        description: 'A sphere that holds a moment in time. Requires: [c, t, t]'
+                    }
+                }
+            };
+            
+            // --- Constants ---
+            const BLANK = '_';
+            const SEPARATOR = '#';
+            const MARK_INV = 'X'; // Mark for "consumed" inventory item
+            const MARK_REC = 'Y'; // Mark for "found" recipe item
+            
+            // The TM will write the rune of the crafted item when placing
+            // the final product on the tape. Default to 'P' but set dynamically
+            // during initialization based on the selected recipe.
+            let FINAL_ITEM = 'P';
+
+            // --- DOM Elements ---
+            const startButton = document.getElementById('startButton');
+            const simulationArea = document.getElementById('simulation-area');
+            const inventoryInput = document.getElementById('inventory');
+            const recipeInput = document.getElementById('recipe');
+            const tapeDiv = document.getElementById('tape');
+            const currentStateSpan = document.getElementById('currentState');
+            const resultSpan = document.getElementById('result');
+            const playPauseButton = document.getElementById('playPauseButton');
+            const stepButton = document.getElementById('stepButton');
+            const resetButton = document.getElementById('resetButton');
+            const speedSlider = document.getElementById('speed');
+
+            const compendiumButton = document.getElementById('compendiumButton');
+            const compendiumModal = document.getElementById('compendiumModal');
+            const closeModal = document.getElementById('closeModal');
+            const compendiumContent = document.getElementById('compendiumContent');
+            const inventoryPalette = document.getElementById('inventoryPalette');
+            const clearInventory = document.getElementById('clearInventory');
+            const recipeSelect = document.getElementById('recipeSelect');
+
+            // --- Turing Machine State ---
+            let tape = [];
+            let head = 0;
+            let currentState = '';
+            let intervalId = null;
+            let isRunning = false;
+            let transitions = {};
+
+            const HALT_ACCEPT = 'q_accept';
+            const HALT_REJECT = 'q_reject';
+
+            // --- Populate UI from Almanac ---
+
+            /**
+             * Populates the clickable inventory palette
+             */
+            function populateInventoryPalette() {
+                inventoryPalette.innerHTML = '';
+                // Get all runes and sort them
+                const sortedRunes = Object.keys(ALMANAC.runes).sort();
+                
+                sortedRunes.forEach(rune => {
+                    const item = ALMANAC.runes[rune];
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'palette-item';
+                    itemEl.dataset.rune = rune; // Store the rune to add
+                    itemEl.title = item.description; // Add tooltip
+                    itemEl.innerHTML = `
+                        <div class="palette-item-rune">${rune}</div>
+                        <div class="palette-item-name">${item.name}</div>
+                    `;
+                    inventoryPalette.appendChild(itemEl);
+                });
+            }
+
+            /**
+             * Populates the recipe dropdown menu
+             */
+            function populateRecipeSelector() {
+                recipeSelect.innerHTML = '<option value="">-- Select a recipe --</option>'; // Reset
+                
+                // Get recipe entries [key, recipe] and sort by recipe name
+                const sortedEntries = Object.entries(ALMANAC.recipes).sort((a, b) => a[1].name.localeCompare(b[1].name));
+
+                sortedEntries.forEach(([key, recipe]) => {
+                    const optionEl = document.createElement('option');
+                    optionEl.value = key; // Value is the recipe rune/key (e.g., 'P')
+                    optionEl.textContent = recipe.name;
+                    recipeSelect.appendChild(optionEl);
+                });
+            }
+
+            /**
+             * Populates the Compendium modal with all items and recipes
+             */
+            function populateCompendiumModal() {
+                compendiumContent.innerHTML = ''; // Clear old content
+                
+                // Add Ingredients section
+                let ingredientsHTML = '<h3 class="font-medieval text-2xl text-yellow-300 mb-3">Ingredients</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
+                const sortedRunes = Object.keys(ALMANAC.runes).sort();
+                
+                sortedRunes.forEach(rune => {
+                    const item = ALMANAC.runes[rune];
+                    ingredientsHTML += `
+                        <div class="p-3 bg-[#1f4068] rounded-md border border-[#4b5a8a]">
+                            <strong class="text-lg text-white">${item.name} (Rune: ${rune})</strong>
+                            <p class="text-gray-300 text-sm">${item.description}</p>
+                        </div>
+                    `;
+                });
+                ingredientsHTML += '</div>';
+                compendiumContent.innerHTML += ingredientsHTML;
+
+                // Add Recipes section
+                let recipesHTML = '<h3 class="font-medieval text-2xl text-yellow-300 mt-6 mb-3">Recipes</h3><div class="space-y-4">';
+                const sortedRecipes = Object.values(ALMANAC.recipes).sort((a, b) => a.name.localeCompare(b.name));
+                
+                // Use entries so we have the rune key available
+                Object.entries(ALMANAC.recipes).sort((a,b)=>a[1].name.localeCompare(b[1].name)).forEach(([runeKey, recipe]) => {
+                     recipesHTML += `
+                        <div class="p-3 bg-[#1f4068] rounded-md border border-[#4b5a8a]">
+                            <strong class="text-lg text-white">${recipe.name} (Creates: ${runeKey})</strong>
+                            <p class="text-gray-300 text-sm">${recipe.description}</p>
+                        </div>
+                    `;
+                });
+                recipesHTML += '</div>';
+                compendiumContent.innerHTML += recipesHTML;
+            }
+
+            // --- Event Listeners for new UI ---
+            
+            // Show the modal
+            compendiumButton.addEventListener('click', () => {
+                populateCompendiumModal();
+                compendiumModal.style.display = 'block';
+            });
+            
+            // Hide the modal
+            closeModal.addEventListener('click', () => {
+                compendiumModal.style.display = 'none';
+            });
+            window.addEventListener('click', (event) => {
+                if (event.target == compendiumModal) {
+                    compendiumModal.style.display = 'none';
+                }
+            });
+
+            // Add item to inventory input (use closest to support clicks on children)
+            inventoryPalette.addEventListener('click', (event) => {
+                const itemEl = event.target.closest('.palette-item');
+                if (itemEl && itemEl.dataset && itemEl.dataset.rune) {
+                    inventoryInput.value += itemEl.dataset.rune;
+                }
+            });
+
+            // Clear inventory input
+            clearInventory.addEventListener('click', () => {
+                inventoryInput.value = '';
+            });
+
+            // Update recipe input from dropdown (value is recipe key)
+            recipeSelect.addEventListener('change', () => {
+                const key = recipeSelect.value;
+                if (key && ALMANAC.recipes[key]) {
+                    recipeInput.value = ALMANAC.recipes[key].runes;
+                    // Update will-produce UI and provisional FINAL_ITEM
+                    document.getElementById('willProduce').textContent = key;
+                    FINAL_ITEM = key;
+                } else {
+                    recipeInput.value = '';
+                    document.getElementById('willProduce').textContent = '-';
+                    FINAL_ITEM = 'P';
+                }
+            });
+
+            // Save/Load/Apply buttons
+            const saveInventoryBtn = document.getElementById('saveInventory');
+            const loadInventoryBtn = document.getElementById('loadInventory');
+            const applyResultBtn = document.getElementById('applyResult');
+            const STORAGE_KEY = 'alchemist_inventory_v1';
+
+            saveInventoryBtn.addEventListener('click', () => {
+                localStorage.setItem(STORAGE_KEY, inventoryInput.value || '');
+                saveInventoryBtn.textContent = 'Saved';
+                setTimeout(()=> saveInventoryBtn.textContent = 'Save', 1000);
+            });
+            loadInventoryBtn.addEventListener('click', () => {
+                const v = localStorage.getItem(STORAGE_KEY) || '';
+                inventoryInput.value = v;
+                loadInventoryBtn.textContent = 'Loaded';
+                setTimeout(()=> loadInventoryBtn.textContent = 'Load', 1000);
+            });
+
+            // Apply the last successful craft result to the inventory (for multiple crafts)
+            applyResultBtn.addEventListener('click', () => {
+                // Append the FINAL_ITEM rune to inventory (if present)
+                if (window.lastCraftResult === 'accept' && FINAL_ITEM) {
+                    inventoryInput.value = (inventoryInput.value || '') + FINAL_ITEM;
+                    applyResultBtn.classList.add('hidden');
+                    // Reset the simulation UI so user can craft again with the updated inventory
+                    resetSimulation();
+                }
+            });
+
+
+            // --- Core Turing Machine Logic (The "Brain") ---
+            
+            /**
+             * Dynamically builds the transition function (delta) for the Turing Machine.
+             * This creates search states for every possible ingredient.
+             */
+            function buildTransitions() {
+                // Get all possible symbols from the Almanac
+                const allSymbols = Object.keys(ALMANAC.runes);
+                
+                // Base states
+                const baseTransitions = {
+                    'q_start': {
+                        // Scan right until we find the separator
+                        read: (symbol) => symbol !== SEPARATOR,
+                        actions: {
+                            '*': { newState: 'q_start', move: 1 }
+                        },
+                        // When we find the separator, move past it and start reading the recipe
+                        fallback: { newState: 'q_get_recipe_item', move: 1 }
+                    },
+                    'q_get_recipe_item': {
+                        // Read the recipe section
+                        read: (symbol) => symbol !== BLANK,
+                        actions: {
+                            // If we see a 'Y', it's already processed, so skip it
+                            [MARK_REC]: { newState: 'q_get_recipe_item', move: 1 },
+                        },
+                        // If it's a new ingredient, mark it 'Y' and go find it in the inventory
+                        // The fallback function handles any symbol that isn't MARK_REC
+                        fallback: (symbol) => {
+                             // Failsafe: if the recipe symbol isn't a known rune, reject.
+                             if (!allSymbols.includes(symbol)) {
+                                return { newState: HALT_REJECT, move: 0 };
+                             }
+                             return { newState: `q_goto_start_find_${symbol}`, write: MARK_REC, move: -1 };
+                        }
+                    },
+                    'q_return_to_recipe': {
+                         // After finding an item, scan right past the inventory to get back to the recipe
+                         read: (symbol) => symbol !== SEPARATOR,
+                         actions: {
+                             '*': {newState: 'q_return_to_recipe', move: 1}
+                         },
+                         // Once we hit the separator, move past it to the recipe section
+                         fallback: {newState: 'q_get_recipe_item', move: 1}
+                    },
+                    'q_success_cleanup': {
+                        // We hit a BLANK in the recipe, so the craft is successful. Now, clean up.
+                        // Move left and erase the recipe (Y's) until we hit the separator
+                        read: (symbol) => symbol !== SEPARATOR,
+                        actions: {
+                            '*': {newState: 'q_success_cleanup', write: BLANK, move: -1},
+                        },
+                        // When we hit the separator, blank it and move to place the final item
+                        fallback: { newState: 'q_place_item', write: BLANK, move: 1 } 
+                    },
+                    'q_place_item': {
+                        // Move to the end of the remaining inventory
+                        read: (symbol) => symbol !== BLANK && symbol !== SEPARATOR,
+                        actions: {
+                            '*': {newState: 'q_place_item', move: 1}
+                        },
+                        // At the first blank spot, write the final item and accept
+                        fallback: {newState: HALT_ACCEPT, write: FINAL_ITEM, move: 0}
+                    },
+                    [HALT_ACCEPT]: {}, // Halting state
+                    [HALT_REJECT]: {}  // Halting state
+                };
+
+                // Dynamically create states for each possible symbol
+                allSymbols.forEach(s => {
+                    // State: Move head to the beginning of the tape to start searching
+                    baseTransitions[`q_goto_start_find_${s}`] = {
+                        read: (symbol) => head > 0, // Read while head is not at the start
+                        actions: {
+                             '*': {newState: `q_goto_start_find_${s}`, move: -1} // Move left
+                        },
+                        // When head is at start (fallback), move right and start searching
+                        fallback: {newState: `q_search_inv_${s}`, move: 1}
+                    };
+                    // State: Search inventory (right of head) for the symbol 's'
+                    baseTransitions[`q_search_inv_${s}`] = {
+                        read: (symbol) => symbol !== SEPARATOR, // Read while in inventory
+                        actions: {
+                            // Found it! Mark it 'X', and go back to the recipe
+                            [s]: {newState: 'q_return_to_recipe', write: MARK_INV, move: 1},
+                            // Not it, keep scanning right
+                            '*': {newState: `q_search_inv_${s}`, move: 1}
+                        },
+                        // If we hit the separator before finding 's', the craft fails
+                        fallback: {newState: HALT_REJECT, move: 0}
+                    };
+                });
+                return baseTransitions;
+            }
+
+            /**
+             * Initializes the machine to its starting configuration.
+             */
+            function initialize() {
+                transitions = buildTransitions();
+                const inventory = inventoryInput.value.split('');
+                const recipe = recipeInput.value.split('');
+
+                // Determine the final item rune from the selected recipe key
+                const selectedKey = recipeSelect.value;
+                if (selectedKey && ALMANAC.recipes[selectedKey]) {
+                    FINAL_ITEM = selectedKey;
+                } else {
+                    FINAL_ITEM = 'P'; // fallback
+                }
+                
+                // Create the initial tape with a single blank on both ends
+                tape = [
+                    BLANK,
+                    ...inventory,
+                    SEPARATOR,
+                    ...recipe,
+                    BLANK
+                ];
+                // Start head at the beginning of the inventory (after single blank)
+                head = 1;
+                currentState = 'q_start';
+
+                // Reset UI
+                resultSpan.textContent = '';
+                resultSpan.className = 'text-2xl font-bold mt-2 h-8';
+                
+                // Ensure single blank padding
+                normalizeTape();
+                updateUI();
+                setControls(true); // Enable simulation buttons
+            }
+
+            /**
+             * Executes a single step of the Turing Machine.
+             */
+            /**
+             * Ensures the tape has exactly one BLANK at each edge.
+             * Trims excessive blanks and adds a blank if missing.
+             */
+            function normalizeTape() {
+                // Trim leading blanks but leave one
+                while (tape.length > 1 && tape[0] === BLANK && tape[1] === BLANK) {
+                    tape.shift();
+                    head -= 1;
+                }
+                // If no leading blank, add one
+                if (tape[0] !== BLANK) {
+                    tape.unshift(BLANK);
+                    head += 1;
+                }
+
+                // Trim trailing blanks but leave one
+                while (tape.length > 1 && tape[tape.length - 1] === BLANK && tape[tape.length - 2] === BLANK) {
+                    tape.pop();
+                }
+                // If no trailing blank, add one
+                if (tape[tape.length - 1] !== BLANK) {
+                    tape.push(BLANK);
+                }
+            }
+
+            function step() {
+                // Don't step if halted
+                if (currentState === HALT_ACCEPT || currentState === HALT_REJECT) {
+                    stopSimulation();
+                    displayResult();
+                    return;
+                }
+
+                const currentSymbol = tape[head];
+                const stateDef = transitions[currentState];
+                
+                // Failsafe: if we enter an undefined state, reject.
+                if (!stateDef) {
+                    console.error(`Error: Unknown state "${currentState}"`);
+                    currentState = HALT_REJECT;
+                    updateUI();
+                    return;
+                }
+
+                let transition = null;
+
+                // Evaluate read predicate (if present)
+                const readOk = typeof stateDef.read === 'function' ? stateDef.read(currentSymbol) : true;
+
+                if (readOk) {
+                    // If read predicate allows, prefer exact symbol action, then wildcard
+                    if (stateDef.actions && stateDef.actions[currentSymbol] !== undefined) {
+                        transition = stateDef.actions[currentSymbol];
+                    } else if (stateDef.actions && stateDef.actions['*'] !== undefined) {
+                        transition = stateDef.actions['*'];
+                    } else {
+                        // No action matched while read is ok: if fallback exists, use it
+                        if (stateDef.fallback) {
+                            transition = typeof stateDef.fallback === 'function' ? stateDef.fallback(currentSymbol) : stateDef.fallback;
+                        }
+                    }
+                } else {
+                    // read predicate failed: use fallback if available
+                    if (stateDef.fallback) {
+                        transition = typeof stateDef.fallback === 'function' ? stateDef.fallback(currentSymbol) : stateDef.fallback;
+                    }
+                }
+
+                // Special case: If in 'q_get_recipe_item' and we read a BLANK, it's a success.
+                // This overrides other logic for this specific state.
+                if(currentState === 'q_get_recipe_item' && currentSymbol === BLANK){
+                     transition = {newState: 'q_success_cleanup', move: -1};
+                }
+
+                // --- Execute Transition ---
+                if (transition) {
+                    currentState = transition.newState;
+                    if (transition.write) {
+                        tape[head] = transition.write;
+                    }
+                    if (transition.move === 1) head++;
+                    else if (transition.move === -1) head--;
+
+                    // Normalize tape to ensure exactly one blank at each edge
+                    normalizeTape();
+
+                } else {
+                    // If no transition was found, something went wrong. Reject.
+                    currentState = HALT_REJECT;
+                }
+                
+                updateUI(); // Redraw the tape and state
+
+                // Check for halt state again after the step
+                if (currentState === HALT_ACCEPT || currentState === HALT_REJECT) {
+                    stopSimulation();
+                    displayResult();
+                }
+            }
+            
+            /**
+             * Updates the DOM to reflect the current machine state.
+             */
+            function updateUI() {
+                tapeDiv.innerHTML = '';
+                tape.forEach((symbol, index) => {
+                    const cell = document.createElement('div');
+                    cell.className = 'tape-cell flex items-center justify-center font-mono';
+                    if (index === head) {
+                        cell.classList.add('head'); // Highlight the head's position
+                    }
+                    // Visual highlights for consumed inventory (X) and found recipe (Y)
+                    if (symbol === MARK_INV) {
+                        cell.classList.add('tape-cell-consumed');
+                    } else if (symbol === MARK_REC) {
+                        cell.classList.add('tape-cell-found');
+                    }
+                    cell.textContent = symbol;
+                    tapeDiv.appendChild(cell);
+                });
+                currentStateSpan.textContent = currentState;
+                
+                // Scroll the tape container to keep the head centered
+                const headElement = tapeDiv.children[head];
+                if(headElement){
+                    headElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            }
+
+            /**
+             * Displays the final result of the simulation.
+             */
+            function displayResult() {
+                // Track last craft result so user can apply the crafted item
+                if (currentState === HALT_ACCEPT) {
+                    resultSpan.textContent = 'Success!';
+                    resultSpan.classList.add('text-green-400');
+                    window.lastCraftResult = 'accept';
+                    // Show apply button so user can add the crafted item to inventory
+                    const applyBtn = document.getElementById('applyResult');
+                    if (applyBtn) applyBtn.classList.remove('hidden');
+                    // Ensure the final item rune appears on the tape; if it wasn't written
+                    // due to edge-case transitions, place it at the first suitable blank
+                    if (FINAL_ITEM && !tape.includes(FINAL_ITEM)) {
+                        // Find first blank that has at least one non-blank to its left
+                        let pos = tape.findIndex((sym, idx) => {
+                            if (sym !== BLANK) return false;
+                            const left = tape.slice(0, idx);
+                            return left.some(s => s !== BLANK && s !== MARK_REC);
+                        });
+                        if (pos === -1) {
+                            // fallback: place before the last blank
+                            pos = tape.length - 1;
+                        }
+                        tape[pos] = FINAL_ITEM;
+                        normalizeTape();
+                        updateUI();
+                    }
+                } else {
+                    resultSpan.textContent = 'Failed!';
+                    resultSpan.classList.add('text-red-400');
+                    window.lastCraftResult = 'reject';
+                }
+            }
+
+            /**
+             * Hides inputs, shows simulation area, and initializes the machine.
+             */
+            function startSimulation() {
+                simulationArea.classList.remove('hidden');
+                // Disable all input controls
+                inventoryInput.disabled = true;
+                recipeSelect.disabled = true;
+                clearInventory.disabled = true;
+                startButton.classList.add('hidden');
+                initialize();
+            }
+
+            /**
+             * Toggles the automatic execution of the 'step' function.
+             */
+            function togglePlayPause() {
+                if (isRunning) {
+                    stopSimulation();
+                } else {
+                    isRunning = true;
+                    playPauseButton.textContent = 'Pause';
+                    stepButton.disabled = true; // Disable step while playing
+                    const delay = 1050 - speedSlider.value; // Speed from slider
+                    intervalId = setInterval(step, delay);
+                }
+            }
+
+            /**
+             * Stops the automatic execution.
+             */
+            function stopSimulation() {
+                isRunning = false;
+                playPauseButton.textContent = 'Play';
+                if (currentState !== HALT_ACCEPT && currentState !== HALT_REJECT) {
+                    stepButton.disabled = false; // Re-enable step if not halted
+                }
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+
+            /**
+             * Resets the entire application to its initial view.
+             */
+            function resetSimulation() {
+                stopSimulation();
+                simulationArea.classList.add('hidden');
+                // Re-enable all input controls
+                inventoryInput.disabled = false;
+                recipeSelect.disabled = false;
+                clearInventory.disabled = false;
+                startButton.classList.remove('hidden');
+                setControls(false); // Disable sim controls
+            }
+            
+            /**
+             * Enables or disables the simulation control buttons.
+             */
+            function setControls(enabled) {
+                const buttons = [playPauseButton, stepButton, resetButton];
+                buttons.forEach(button => {
+                    button.disabled = !enabled;
+                    if(enabled){
+                        button.classList.remove('btn-disabled');
+                    } else {
+                        button.classList.add('btn-disabled');
+                    }
+                });
+            }
+            
+            // --- Event Listeners ---
+            startButton.addEventListener('click', startSimulation);
+            playPauseButton.addEventListener('click', togglePlayPause);
+            stepButton.addEventListener('click', step);
+            resetButton.addEventListener('click', resetSimulation);
+            
+            // Adjust simulation speed in real-time if it's already running
+            speedSlider.addEventListener('input', () => {
+                if(isRunning){
+                    stopSimulation();
+                    togglePlayPause();
+                }
+            });
+
+            // --- Initial App Setup ---
+            function main() {
+                populateInventoryPalette();
+                populateRecipeSelector();
+                setControls(false); // Initially disable sim controls
+            }
+            
+            main(); // Run the app setup
+        });
+    </script>
+</body>
+</html>
+
