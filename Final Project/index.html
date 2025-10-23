@@ -10,21 +10,36 @@
     <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         /* Custom styles for the app's theme */
+        /* --- NEW: Animated Background --- */
+        @keyframes backgroundGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
         body {
             font-family: 'Inter', sans-serif;
-            /* Dark, magical background color */
-            background-color: #1a1a2e;
+            background: linear-gradient(-45deg, #1a1a2e, #162447, #1f4068, #1a1a2e);
+            background-size: 400% 400%;
+            animation: backgroundGradient 25s ease infinite; /* Slow animation */
             color: #e0e0e0;
         }
+        /* --- END NEW --- */
+        
         .font-medieval {
             font-family: 'MedievalSharp', cursive;
         }
         /* Card styling for the main container */
+        /* --- MODIFIED: Enhanced Card --- */
         .card {
-            background-color: #162447;
-            border: 1px solid #4b5a8a;
-            box-shadow: 0 0 20px rgba(75, 90, 138, 0.5);
+            background-color: rgba(22, 36, 71, 0.9); /* Slightly transparent */
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            border-image: linear-gradient(to bottom right, #4b5a8a, #f9d71c, #4b5a8a) 1;
+            box-shadow: 0 0 30px rgba(75, 90, 138, 0.6); /* Enhanced shadow */
+            backdrop-filter: blur(5px);
         }
+        /* --- END MODIFIED --- */
+
         /* Custom scrollbar for the tape */
         .tape-container {
             scrollbar-width: thin;
@@ -49,6 +64,7 @@
             font-size: 1.5rem; /* 24px */
             color: #e0e0e0;
             transition: all 0.3s ease;
+            border-radius: 0.25rem; /* Slightly rounded */
         }
         .tape-cell-consumed {
             background-color: #551011; /* dark red for consumed X */
@@ -60,33 +76,189 @@
             color: #d4ffd4;
             border-color: #3ba35a;
         }
+
+        /* --- CSS FOR ACCEPT ANIMATION --- */
+        .tape-cell-crafted {
+            background-color: #f9d71c; /* Bright gold */
+            color: #1a1a2e; /* Dark text */
+            border-color: #fff;
+            font-weight: bold;
+        }
+        @keyframes flash-animation {
+            0%, 100% { 
+                background-color: #f9d71c; 
+                color: #1a1a2e;
+                transform: scale(1.1); 
+                box-shadow: 0 0 15px #f9d71c;
+            }
+            50% { 
+                background-color: #1f4068; 
+                color: #e0e0e0;
+                transform: scale(1.0);
+                box-shadow: none;
+            }
+        }
+        .flash-success {
+            animation: flash-animation 0.7s 2 ease-in-out;
+        }
+        
+        /* --- CSS FOR REJECT ANIMATION --- */
+        .reject-banner {
+            background-color: #e43f5a; /* Alchemical red */
+            color: #fff;
+            text-shadow: 0 0 5px #000;
+        }
+        @keyframes flash-animation-reject {
+            0%, 100% { 
+                background-color: #e43f5a; 
+                transform: scale(1.05); 
+                box-shadow: 0 0 15px #e43f5a;
+            }
+            50% { 
+                background-color: #551011; /* Dark red */
+                transform: scale(1.0);
+                box-shadow: none;
+            }
+        }
+        .flash-reject {
+            animation: flash-animation-reject 0.7s 2 ease-in-out;
+        }
+
+        /* --- STATE TOOLTIP CSS --- */
+        #stateTooltip {
+            visibility: hidden;
+            width: 280px;
+            background-color: #1a1a2e;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 10;
+            bottom: 150%; /* Position above the icon */
+            left: 50%;
+            margin-left: -140px; /* Use half of the width to center */
+            opacity: 0;
+            transition: opacity 0.3s;
+            border: 1px solid #4b5a8a;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5); /* Added shadow */
+        }
+        #stateTooltipContainer:hover #stateTooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* --- DRAG & DROP INVENTORY CSS --- */
+        .inventory-slot {
+            height: 5rem; /* 80px */
+            border: 2px dashed #4b5a8a;
+            border-radius: 8px;
+            background-color: #1a1a2e;
+            transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s; /* Added shadow transition */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            box-sizing: border-box;
+            overflow: hidden;
+            position: relative; 
+        }
+        .inventory-slot:hover {
+            background-color: #1f4068;
+            box-shadow: 0 0 10px #f9d71c; /* Yellow glow on hover */
+        }
+        .inventory-slot.drag-over {
+            background-color: #2a5a8f;
+            border-color: #f9d71c;
+            box-shadow: 0 0 15px #f9d71c; /* Brighter glow */
+        }
+        .inventory-slot .palette-item-rune {
+            font-size: 1.75rem;
+            margin-top: 4px;
+        }
+        .inventory-slot .palette-item-name {
+            font-size: 0.75rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            text-align: center;
+        }
+        .palette-item {
+            cursor: grab; /* Change cursor for draggable items */
+        }
+        .palette-item:active {
+            cursor: grabbing;
+        }
+        
+        #inventoryPalette {
+             transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s; /* Added */
+        }
+        #inventoryPalette.drag-over {
+            background-color: rgba(85, 16, 17, 0.5); /* Semi-transparent Dark red */
+            border-color: #e43f5a;
+            box-shadow: 0 0 15px #e43f5a; /* Red glow */
+        }
+
+        /* --- TARGET HIGHLIGHTING CSS --- */
+        @keyframes pulse-target {
+            0%, 100% {
+                box-shadow: 0 0 10px #f9d71c;
+                border-color: #f9d71c;
+            }
+            50% {
+                box-shadow: none;
+                border-color: #3ba35a;
+            }
+        }
+        .tape-cell-target {
+            /* This is in addition to .tape-cell-found */
+            animation: pulse-target 1s infinite;
+        }
+
         /* Head indicator style */
         .head {
             border-bottom: 4px solid #f9d71c; /* Gold color for the head indicator */
             transform: translateY(4px);
-            /* z-index to ensure it's visually distinct */
+            z-index: 5; /* Ensure head is above tape cells */
+            position: relative; /* Needed for z-index */
         }
         /* Button styling */
+        /* --- MODIFIED: Gradient Buttons --- */
         .btn-primary {
-            background-color: #e43f5a; /* Alchemical red */
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            background-image: linear-gradient(to bottom, #e43f5a, #b32a40);
+            border: 1px solid #ff7a8a;
+            transition: all 0.3s ease;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
         }
         .btn-primary:hover {
-            background-color: #f55a72;
+            background-image: linear-gradient(to bottom, #f55a72, #c73a50);
             transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(228, 63, 90, 0.4); /* Red glow */
         }
         .btn-secondary {
-            background-color: #1f4068;
-            border: 1px solid #4b5a8a;
-            transition: background-color 0.3s ease;
+             background-image: linear-gradient(to bottom, #1f4068, #162447);
+             border: 1px solid #4b5a8a;
+             transition: all 0.3s ease;
+             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
         .btn-secondary:hover {
-            background-color: #2a5a8f;
+            background-image: linear-gradient(to bottom, #2a5a8f, #1a3a6a);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(75, 90, 138, 0.3); /* Blue glow */
         }
+        /* --- END MODIFIED --- */
+        
         .btn-disabled {
+            background-image: none; /* Remove gradient when disabled */
             background-color: #4b5a8a;
             cursor: not-allowed;
             opacity: 0.6;
+            box-shadow: none;
+            transform: none;
         }
         /* Input field styling */
         input[type="text"], select {
@@ -94,7 +266,14 @@
             border: 1px solid #4b5a8a;
             color: #e0e0e0;
             border-radius: 0.375rem; /* rounded-md */
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
+        input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: #f9d71c;
+            box-shadow: 0 0 8px #f9d71c;
+        }
+        
         /* Styling for the Compendium Modal */
         .modal {
             display: none; /* Hidden by default */
@@ -105,7 +284,7 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0, 0, 0, 0.6);
+            background-color: rgba(0, 0, 0, 0.7); /* Darker backdrop */
             padding-top: 60px;
         }
         .modal-content {
@@ -124,6 +303,7 @@
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
+            transition: color 0.2s;
         }
         .close-modal:hover {
             color: #fff;
@@ -141,19 +321,28 @@
         .palette-item:hover {
             background-color: #2a5a8f;
             transform: scale(1.05);
+            box-shadow: 0 0 10px #7aa0cc; /* Blue glow on hover */
         }
         .palette-item-rune {
             font-family: 'MedievalSharp', cursive;
             font-size: 2rem;
             color: #f9d71c;
-            /* Make rune non-clickable so event targets palette-item */
             pointer-events: none; 
         }
         .palette-item-name {
             font-size: 0.8rem;
             color: #e0e0e0;
-            /* Make name non-clickable */
             pointer-events: none; 
+        }
+
+        /* --- NEW: Simulation Area Transition --- */
+        #simulation-area {
+            transition: opacity 0.5s ease-in-out;
+            opacity: 1;
+        }
+        #simulation-area.hidden {
+            opacity: 0;
+            /* We still use hidden class to remove from layout */
         }
     </style>
 </head>
@@ -163,7 +352,7 @@
         <div class="card rounded-lg p-6 md:p-8">
             <!-- Header -->
             <header class="text-center mb-4">
-                <h1 class="font-medieval text-4xl md:text-5xl text-[#f9d71c]">The Alchemist's Assistant</h1>
+                <h1 class="font-medieval text-4xl md:text-5xl text-[#f9d71c] drop-shadow-lg">The Alchemist's Assistant</h1>
                 <p class="text-lg text-gray-300 mt-2">A Turing Machine-Powered Crafting Simulator</p>
             </header>
 
@@ -175,45 +364,56 @@
             <!-- Refined Inputs -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 
-                <!-- Inventory Input Area -->
+                <!-- Inventory Input Area (Drag & Drop) -->
                 <div>
-                    <label for="inventory" class="block mb-2 font-semibold">Inventory</label>
-                    <input type="text" id="inventory" class="w-full p-2 rounded-md mb-3" placeholder="Click items below to add...">
-                    <div id="inventoryPalette" class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    <label for="inventoryGrid" class="block mb-2 font-semibold font-medieval text-lg">Inventory (Drag from Palette)</label>
+                    <div id="inventoryGrid" class="grid grid-cols-4 sm:grid-cols-8 gap-2 p-2 rounded-md bg-[#1a1a2e] border border-[#4b5a8a] min-h-[5rem]">
+                        <!-- 8 empty slots will be generated by JS -->
+                    </div>
+                    
+                    <label for="inventoryPalette" class="block mb-2 mt-4 font-semibold font-medieval text-lg">Ingredient Palette (Drop here to delete)</label>
+                    <div id="inventoryPalette" class="grid grid-cols-3 sm:grid-cols-4 gap-2 border-2 border-transparent p-2 rounded-md">
                         <!-- Inventory palette items will be generated here -->
                     </div>
+                    
                     <div class="flex gap-2 mt-3">
-                        <button id="clearInventory" class="btn-secondary text-sm py-1 px-3 rounded-md">Clear</button>
+                        <button id="clearInventory" class="btn-secondary text-sm py-1 px-3 rounded-md">Clear Grid</button>
                         <button id="saveInventory" class="btn-secondary text-sm py-1 px-3 rounded-md">Save</button>
                         <button id="loadInventory" class="btn-secondary text-sm py-1 px-3 rounded-md">Load</button>
                         <button id="applyResult" class="btn-primary text-sm py-1 px-3 rounded-md hidden">Apply Result</button>
                     </div>
+                    <!-- Hidden input, used for validation by older functions (if needed) -->
+                    <input type="text" id="inventory" class="hidden">
                 </div>
                 
-                <!-- Recipe Input Area -->
+                <!-- Recipe Input Area (Unchanged) -->
                 <div>
-                    <label for="recipeSelect" class="block mb-2 font-semibold">Select Recipe</label>
+                    <label for="recipeSelect" class="block mb-2 font-semibold font-medieval text-lg">Select Recipe</label>
                     <select id="recipeSelect" class="w-full p-2 rounded-md mb-3">
                         <option value="">-- Select a recipe --</option>
                         <!-- Recipe options will be generated here -->
                     </select>
                     <div class="flex items-center gap-3 mb-3">
-                        <label class="font-semibold">Will Produce:</label>
+                        <label class="font-semibold font-medieval text-lg">Will Produce:</label>
                         <div id="willProduce" class="p-2 rounded-md bg-[#1f4068] border border-[#4b5a8a] font-mono text-yellow-300">-</div>
                     </div>
-                    <!-- This input is now populated by the dropdown, but the TM reads from it -->
-                    <label for="recipe" class="block mb-2 font-semibold">Recipe Runes</label>
-                    <input type="text" id="recipe" class="w-full p-2 rounded-md bg-[#1a1a2e] border-gray-600" placeholder="Recipe runes appear here..." readonly>
+                    
+                    <label for="recipe" class="block mb-2 font-semibold font-medieval text-lg">Recipe Runes</label>
+                    <input type="text" id="recipe" class="w-full p-2 rounded-md bg-[#1a1a2e] border-gray-600 font-mono" placeholder="Recipe runes appear here..." readonly>
                 </div>
             </div>
 
+            <!-- Validation Error Display -->
+            <div id="validationError" class="text-center text-red-400 font-bold mb-4 hidden p-3 bg-red-900 border border-red-500 rounded-md"></div>
+            
             <!-- Main Action Button -->
             <div class="text-center mb-6">
-                <button id="startButton" class="btn-primary font-bold py-3 px-8 rounded-lg text-xl shadow-lg">Begin Transmutation</button>
+                <button id="startButton" class="btn-primary font-bold py-3 px-8 rounded-lg text-xl shadow-lg font-medieval">Begin Transmutation</button>
             </div>
 
             <!-- Turing Machine Visualization Area (hidden by default) -->
-            <div id="simulation-area" class="hidden">
+            <!-- MODIFIED: Add hidden class for smooth transition -->
+            <div id="simulation-area" class="hidden opacity-0">
                 <div class="mb-4">
                     <h2 class="font-medieval text-2xl text-center text-[#f9d71c] mb-2">Transmutation Tape</h2>
                     <!-- Horizontal Scrolling Container for the Tape -->
@@ -226,22 +426,55 @@
 
                 <!-- Status Display -->
                 <div class="text-center my-4 p-4 rounded-lg bg-[#1f4068] border border-[#4b5a8a]">
-                     <p class="text-lg">Current State: <strong id="currentState" class="text-xl text-yellow-300"></strong></p>
+                     <!-- State Tooltip Container -->
+                     <div class="flex items-center justify-center relative">
+                        <p class="text-lg">Current State: <strong id="currentState" class="text-xl text-yellow-300"></strong></p>
+                        <!-- Info Icon and Tooltip -->
+                        <div id="stateTooltipContainer" class="relative ml-2 cursor-pointer">
+                            <svg id="stateInfoIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-300 hover:text-yellow-300 transition-colors" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                            <div id="stateTooltip" class="hidden">State description goes here.</div>
+                        </div>
+                     </div>
                      <p id="result" class="text-2xl font-bold mt-2 h-8"></p> <!-- h-8 ensures space is reserved -->
-                 <!-- Accept banner placeholder -->
-                 <div id="acceptBanner" class="hidden mt-3 p-3 rounded-md bg-gradient-to-r from-yellow-400 to-yellow-200 text-black font-bold inline-block"></div>
+                     <!-- Accept banner placeholder -->
+                     <div id="acceptBanner" class="hidden mt-3 p-3 rounded-md bg-gradient-to-r from-yellow-400 to-yellow-200 text-black font-bold inline-block"></div>
+                     <!-- Reject banner placeholder -->
+                     <div id="rejectBanner" class="hidden mt-3 p-3 rounded-md reject-banner font-bold inline-block"></div>
                 </div>
+
+                <!-- Simulation Details Panels -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
+                    <!-- Statistics Panel -->
+                    <div class="p-3 rounded-lg bg-[#1a1a2e] border border-[#4b5a8a]">
+                        <h3 class="font-medieval text-xl text-yellow-300 mb-2">Simulation Stats</h3>
+                        <div class="text-sm space-y-1">
+                            <p>Steps Taken: <strong id="stepCountSpan" class="text-white">0</strong></p>
+                            <p>Head Position: <strong id="headPosSpan" class="text-white">0</strong></p>
+                        </div>
+                    </div>
+                    <!-- Current Rule Panel -->
+                    <div class="p-3 rounded-lg bg-[#1a1a2e] border border-[#4b5a8a]">
+                        <h3 class="font-medieval text-xl text-yellow-300 mb-2">Current Rule</h3>
+                        <div class="text-sm font-mono text-cyan-300 h-10 flex items-center justify-center" id="currentRuleSpan">
+                            Waiting to start...
+                        </div>
+                    </div>
+                </div>
+
 
                 <!-- Simulation Controls -->
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4">
                     <div class="flex items-center gap-2">
                         <button id="playPauseButton" class="btn-secondary font-bold py-2 px-4 rounded-md">Play</button>
+                        <button id="stepBackButton" class="btn-secondary font-bold py-2 px-4 rounded-md">Step Back</button> 
                         <button id="stepButton" class="btn-secondary font-bold py-2 px-4 rounded-md">Step</button>
-                        <button id="resetButton" class="btn-secondary font-bold py-2 px-4 rounded-md">Reset</button>
                     </div>
                     <div class="flex items-center gap-2">
-                         <label for="speed">Speed:</label>
-                         <input type="range" id="speed" min="50" max="1000" value="500" class="w-32 cursor-pointer">
+                        <button id="resetButton" class="btn-secondary font-bold py-2 px-4 rounded-md">Reset</button>
+                         <label for="speed" class="font-medieval">Speed:</label>
+                         <input type="range" id="speed" min="50" max="1000" value="500" class="w-32 cursor-pointer accent-[#f9d71c]"> <!-- Yellow accent -->
                     </div>
                 </div>
             </div>
@@ -366,28 +599,47 @@
                     }
                 }
             };
+
+            // --- State Descriptions for Tooltip ---
+            const STATE_DESCRIPTIONS = {
+                'q_start': 'Starting... Machine is moving right to find the separator (#).',
+                'q_get_recipe_item': 'Reading recipe... Looking for the next ingredient to craft.',
+                'q_return_to_recipe': 'Task complete. Moving back to the recipe list.',
+                'q_success_cleanup': 'Craft successful! Cleaning up the tape.',
+                'q_place_item': 'Placing the new item (e.g., P) onto the tape.',
+                'q_accept': 'HALT (Accept): Transmutation complete!',
+                'q_reject': 'HALT (Reject): Craft failed. See reason below.',
+            };
+            // Dynamically add descriptions for search states
+            Object.keys(ALMANAC.runes).forEach(s => {
+                STATE_DESCRIPTIONS[`q_goto_start_find_${s}`] = `Found recipe item '${s}'. Rewinding tape to search inventory.`;
+                STATE_DESCRIPTIONS[`q_search_inv_${s}`] = `Searching inventory for: ${ALMANAC.runes[s]?.name || s} (${s}).`;
+            });
+            Object.keys(ALMANAC.recipes).forEach(s => {
+                 STATE_DESCRIPTIONS[`q_goto_start_find_${s}`] = `Found recipe item '${s}'. Rewinding tape to search inventory.`;
+                 STATE_DESCRIPTIONS[`q_search_inv_${s}`] = `Searching inventory for: ${ALMANAC.recipes[s]?.name || s} (${s}).`;
+            });
             
             // --- Constants ---
             const BLANK = '_';
             const SEPARATOR = '#';
             const MARK_INV = 'X'; // Mark for "consumed" inventory item
             const MARK_REC = 'Y'; // Mark for "found" recipe item
+            const NUM_INV_SLOTS = 8;
             
-            // The TM will write the rune of the crafted item when placing
-            // the final product on the tape. Default to 'P' but set dynamically
-            // during initialization based on the selected recipe.
             let FINAL_ITEM = 'P';
 
             // --- DOM Elements ---
             const startButton = document.getElementById('startButton');
             const simulationArea = document.getElementById('simulation-area');
-            const inventoryInput = document.getElementById('inventory');
+            const inventoryGrid = document.getElementById('inventoryGrid'); 
             const recipeInput = document.getElementById('recipe');
             const tapeDiv = document.getElementById('tape');
             const currentStateSpan = document.getElementById('currentState');
             const resultSpan = document.getElementById('result');
             const playPauseButton = document.getElementById('playPauseButton');
             const stepButton = document.getElementById('stepButton');
+            const stepBackButton = document.getElementById('stepBackButton'); 
             const resetButton = document.getElementById('resetButton');
             const speedSlider = document.getElementById('speed');
 
@@ -398,6 +650,17 @@
             const inventoryPalette = document.getElementById('inventoryPalette');
             const clearInventory = document.getElementById('clearInventory');
             const recipeSelect = document.getElementById('recipeSelect');
+            const willProduceDiv = document.getElementById('willProduce');
+            const acceptBanner = document.getElementById('acceptBanner');
+            const rejectBanner = document.getElementById('rejectBanner'); 
+            const applyResultBtn = document.getElementById('applyResult');
+            const validationError = document.getElementById('validationError'); 
+            const stateTooltipContainer = document.getElementById('stateTooltipContainer'); 
+            const stateTooltip = document.getElementById('stateTooltip'); 
+            const stepCountSpan = document.getElementById('stepCountSpan'); 
+            const headPosSpan = document.getElementById('headPosSpan'); 
+            const currentRuleSpan = document.getElementById('currentRuleSpan'); 
+
 
             // --- Turing Machine State ---
             let tape = [];
@@ -406,61 +669,143 @@
             let intervalId = null;
             let isRunning = false;
             let transitions = {};
+            let rejectionReason = ''; 
+            let currentTargetRune = ''; 
+            let inventorySlots = Array(NUM_INV_SLOTS).fill(null); 
+            let historyStack = []; 
+            let stepCount = 0; 
 
             const HALT_ACCEPT = 'q_accept';
-            const HALT_REJECT = 'q_reject';
+            const HALT_REJECT = 'q_reject'; 
+            
+            // --- Web Audio Sound Engine ---
+            let audioCtx = null;
+
+            function initAudio() {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            function playTone(frequency, type = 'sine', duration = 0.1) {
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + duration);
+            }
+
+            const sounds = {
+                playClick: () => {
+                    playTone(800, 'triangle', 0.05);
+                },
+                playStep: () => {
+                    playTone(1200, 'sine', 0.03);
+                },
+                playStepBack: () => { 
+                    playTone(600, 'triangle', 0.05);
+                },
+                playTrash: () => { 
+                    playTone(300, 'sawtooth', 0.1);
+                },
+                playStart: () => {
+                    if (!audioCtx) return;
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(audioCtx.currentTime);
+                    osc.stop(audioCtx.currentTime + 0.3);
+                },
+                playAccept: () => {
+                    if (!audioCtx) return;
+                    playTone(523.25, 'sine', 0.1); // C5
+                    setTimeout(() => playTone(659.25, 'sine', 0.1), 100); // E5
+                    setTimeout(() => playTone(783.99, 'sine', 0.15), 200); // G5
+                },
+                playReject: () => {
+                    if (!audioCtx) return;
+                    playTone(200, 'sawtooth', 0.15);
+                    setTimeout(() => playTone(150, 'sawtooth', 0.15), 100);
+                }
+            };
+            // --- END SOUND ENGINE ---
+
 
             // --- Populate UI from Almanac ---
 
-            /**
-             * Populates the clickable inventory palette
-             */
             function populateInventoryPalette() {
                 inventoryPalette.innerHTML = '';
-                // Get all runes and sort them
                 const sortedRunes = Object.keys(ALMANAC.runes).sort();
                 
                 sortedRunes.forEach(rune => {
                     const item = ALMANAC.runes[rune];
                     const itemEl = document.createElement('div');
                     itemEl.className = 'palette-item';
-                    itemEl.dataset.rune = rune; // Store the rune to add
-                    itemEl.title = item.description; // Add tooltip
+                    itemEl.dataset.rune = rune; 
+                    itemEl.title = item.description;
+                    itemEl.draggable = true; 
                     itemEl.innerHTML = `
                         <div class="palette-item-rune">${rune}</div>
                         <div class="palette-item-name">${item.name}</div>
                     `;
+                    itemEl.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', e.target.dataset.rune);
+                        e.dataTransfer.setData('text/origin-index', ""); // Mark as from palette
+                        sounds.playClick();
+                    });
                     inventoryPalette.appendChild(itemEl);
+                });
+
+                inventoryPalette.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    const originIndex = e.dataTransfer.getData('text/origin-index');
+                    if (originIndex !== "") { 
+                         inventoryPalette.classList.add('drag-over');
+                    }
+                });
+                 inventoryPalette.addEventListener('dragleave', (e) => {
+                    inventoryPalette.classList.remove('drag-over');
+                });
+                inventoryPalette.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    inventoryPalette.classList.remove('drag-over');
+                    const originIndex = e.dataTransfer.getData('text/origin-index');
+                    if (originIndex !== "") {
+                        inventorySlots[originIndex] = null; 
+                        renderInventoryGrid();
+                        sounds.playTrash();
+                    }
                 });
             }
 
-            /**
-             * Populates the recipe dropdown menu
-             */
             function populateRecipeSelector() {
-                recipeSelect.innerHTML = '<option value="">-- Select a recipe --</option>'; // Reset
-                
-                // Get recipe entries [key, recipe] and sort by recipe name
+                recipeSelect.innerHTML = '<option value="">-- Select a recipe --</option>';
                 const sortedEntries = Object.entries(ALMANAC.recipes).sort((a, b) => a[1].name.localeCompare(b[1].name));
-
                 sortedEntries.forEach(([key, recipe]) => {
                     const optionEl = document.createElement('option');
-                    optionEl.value = key; // Value is the recipe rune/key (e.g., 'P')
+                    optionEl.value = key;
                     optionEl.textContent = recipe.name;
                     recipeSelect.appendChild(optionEl);
                 });
             }
 
-            /**
-             * Populates the Compendium modal with all items and recipes
-             */
             function populateCompendiumModal() {
-                compendiumContent.innerHTML = ''; // Clear old content
+                compendiumContent.innerHTML = '';
                 
-                // Add Ingredients section
                 let ingredientsHTML = '<h3 class="font-medieval text-2xl text-yellow-300 mb-3">Ingredients</h3><div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
                 const sortedRunes = Object.keys(ALMANAC.runes).sort();
-                
                 sortedRunes.forEach(rune => {
                     const item = ALMANAC.runes[rune];
                     ingredientsHTML += `
@@ -473,11 +818,7 @@
                 ingredientsHTML += '</div>';
                 compendiumContent.innerHTML += ingredientsHTML;
 
-                // Add Recipes section
                 let recipesHTML = '<h3 class="font-medieval text-2xl text-yellow-300 mt-6 mb-3">Recipes</h3><div class="space-y-4">';
-                const sortedRecipes = Object.values(ALMANAC.recipes).sort((a, b) => a.name.localeCompare(b.name));
-                
-                // Use entries so we have the rune key available
                 Object.entries(ALMANAC.recipes).sort((a,b)=>a[1].name.localeCompare(b[1].name)).forEach(([runeKey, recipe]) => {
                      recipesHTML += `
                         <div class="p-3 bg-[#1f4068] rounded-md border border-[#4b5a8a]">
@@ -490,449 +831,699 @@
                 compendiumContent.innerHTML += recipesHTML;
             }
 
+            // --- Drag & Drop Grid Logic ---
+
+            function renderInventoryGrid() {
+                inventoryGrid.innerHTML = '';
+                inventorySlots.forEach((rune, index) => {
+                    const slot = document.createElement('div');
+                    slot.className = 'inventory-slot';
+                    slot.dataset.index = index;
+                    
+                    if (rune && (ALMANAC.runes[rune] || ALMANAC.recipes[rune])) {
+                        const item = ALMANAC.runes[rune] || ALMANAC.recipes[rune];
+                        slot.innerHTML = `
+                            <div class="palette-item-rune">${rune}</div>
+                            <div class="palette-item-name">${item.name.split(' (')[0]}</div>
+                        `;
+                        slot.title = item.name;
+                        slot.draggable = true;
+                    } else {
+                        slot.innerHTML = ``;
+                        slot.draggable = false;
+                    }
+                    addDragAndDropListeners(slot);
+                    inventoryGrid.appendChild(slot);
+                });
+            }
+
+            function addDragAndDropListeners(slot) {
+                slot.addEventListener('dragstart', (e) => {
+                    if (!inventorySlots[e.target.dataset.index]) {
+                        e.preventDefault();
+                        return;
+                    }
+                    e.dataTransfer.setData('text/plain', inventorySlots[e.target.dataset.index]);
+                    e.dataTransfer.setData('text/origin-index', e.target.dataset.index);
+                    sounds.playClick();
+                });
+
+                slot.addEventListener('dragover', (e) => {
+                    e.preventDefault(); 
+                    slot.classList.add('drag-over');
+                });
+                slot.addEventListener('dragenter', (e) => e.preventDefault());
+                slot.addEventListener('dragleave', () => {
+                    slot.classList.remove('drag-over');
+                });
+
+                slot.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    slot.classList.remove('drag-over');
+                    const rune = e.dataTransfer.getData('text/plain');
+                    const originIndex = e.dataTransfer.getData('text/origin-index');
+                    const targetIndex = e.target.closest('.inventory-slot').dataset.index;
+                    
+                    if (!rune || targetIndex === undefined) return;
+                    
+                    sounds.playClick();
+
+                    const itemAtTarget = inventorySlots[targetIndex];
+
+                    if (originIndex === "") {
+                        inventorySlots[targetIndex] = rune;
+                    } 
+                    else {
+                        inventorySlots[targetIndex] = rune;
+                        inventorySlots[originIndex] = itemAtTarget;
+                    }
+                    renderInventoryGrid();
+                });
+            }
+
             // --- Event Listeners for new UI ---
             
-            // Show the modal
             compendiumButton.addEventListener('click', () => {
+                sounds.playClick();
                 populateCompendiumModal();
                 compendiumModal.style.display = 'block';
             });
             
-            // Hide the modal
             closeModal.addEventListener('click', () => {
+                sounds.playClick();
                 compendiumModal.style.display = 'none';
             });
             window.addEventListener('click', (event) => {
                 if (event.target == compendiumModal) {
+                    sounds.playClick();
                     compendiumModal.style.display = 'none';
                 }
             });
 
-            // Add item to inventory input (use closest to support clicks on children)
-            inventoryPalette.addEventListener('click', (event) => {
-                const itemEl = event.target.closest('.palette-item');
-                if (itemEl && itemEl.dataset && itemEl.dataset.rune) {
-                    inventoryInput.value += itemEl.dataset.rune;
-                }
-            });
-
-            // Clear inventory input
             clearInventory.addEventListener('click', () => {
-                inventoryInput.value = '';
+                sounds.playClick();
+                inventorySlots.fill(null);
+                renderInventoryGrid();
             });
 
-            // Update recipe input from dropdown (value is recipe key)
             recipeSelect.addEventListener('change', () => {
+                sounds.playClick();
                 const key = recipeSelect.value;
                 if (key && ALMANAC.recipes[key]) {
                     recipeInput.value = ALMANAC.recipes[key].runes;
-                    // Update will-produce UI and provisional FINAL_ITEM
-                    document.getElementById('willProduce').textContent = key;
-                    FINAL_ITEM = key;
+                    willProduceDiv.textContent = key;
+                    FINAL_ITEM = key; 
                 } else {
                     recipeInput.value = '';
-                    document.getElementById('willProduce').textContent = '-';
-                    FINAL_ITEM = 'P';
+                    willProduceDiv.textContent = '-';
+                    FINAL_ITEM = 'P'; 
                 }
             });
 
-            // Save/Load/Apply buttons
             const saveInventoryBtn = document.getElementById('saveInventory');
             const loadInventoryBtn = document.getElementById('loadInventory');
-            const applyResultBtn = document.getElementById('applyResult');
             const STORAGE_KEY = 'alchemist_inventory_v1';
 
             saveInventoryBtn.addEventListener('click', () => {
-                localStorage.setItem(STORAGE_KEY, inventoryInput.value || '');
+                sounds.playClick();
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(inventorySlots));
                 saveInventoryBtn.textContent = 'Saved';
                 setTimeout(()=> saveInventoryBtn.textContent = 'Save', 1000);
             });
             loadInventoryBtn.addEventListener('click', () => {
-                const v = localStorage.getItem(STORAGE_KEY) || '';
-                inventoryInput.value = v;
+                sounds.playClick();
+                const v = localStorage.getItem(STORAGE_KEY);
+                inventorySlots = v ? JSON.parse(v) : Array(NUM_INV_SLOTS).fill(null);
+                renderInventoryGrid();
                 loadInventoryBtn.textContent = 'Loaded';
                 setTimeout(()=> loadInventoryBtn.textContent = 'Load', 1000);
             });
 
-            // Apply the last successful craft result to the inventory (for multiple crafts)
             applyResultBtn.addEventListener('click', () => {
-                // Append the FINAL_ITEM rune to inventory (if present)
+                sounds.playClick();
                 if (window.lastCraftResult === 'accept' && FINAL_ITEM) {
-                    inventoryInput.value = (inventoryInput.value || '') + FINAL_ITEM;
-                    applyResultBtn.classList.add('hidden');
-                    // Reset the simulation UI so user can craft again with the updated inventory
-                    resetSimulation();
+                    const emptySlotIndex = inventorySlots.indexOf(null);
+                    if (emptySlotIndex > -1) {
+                        inventorySlots[emptySlotIndex] = FINAL_ITEM;
+                        renderInventoryGrid();
+                        applyResultBtn.classList.add('hidden');
+                    } else {
+                        sounds.playReject(); 
+                        validationError.textContent = "No space in inventory to apply result!";
+                        validationError.classList.remove('hidden');
+                        setTimeout(() => validationError.classList.add('hidden'), 2000);
+                    }
                 }
+            });
+            
+            stateTooltipContainer.addEventListener('mouseenter', () => {
+                const desc = STATE_DESCRIPTIONS[currentState] || `Unknown state: ${currentState}`;
+                stateTooltip.textContent = desc;
+                stateTooltip.classList.remove('hidden');
+            });
+            stateTooltipContainer.addEventListener('mouseleave', () => {
+                stateTooltip.classList.add('hidden');
             });
 
 
             // --- Core Turing Machine Logic (The "Brain") ---
+
+            function validateInput(inventoryString) {
+                for (const rune of inventoryString) {
+                    if (!ALMANAC.runes[rune] && !ALMANAC.recipes[rune]) { 
+                        return `Invalid rune in inventory: '${rune}'`;
+                    }
+                }
+                for (const rune of recipeInput.value) {
+                     if (!ALMANAC.runes[rune]) {
+                        // Ensure recipes ONLY contain basic runes (ingredients)
+                        return `Invalid rune in recipe: '${rune}'`;
+                    }
+                }
+                return null;
+            }
             
-            /**
-             * Dynamically builds the transition function (delta) for the Turing Machine.
-             * This creates search states for every possible ingredient.
-             */
             function buildTransitions() {
-                // Get all possible symbols from the Almanac
-                const allSymbols = Object.keys(ALMANAC.runes);
+                const allIngredients = Object.keys(ALMANAC.runes);
+                const allCraftedItems = Object.keys(ALMANAC.recipes);
+                // Inventory can contain ingredients OR crafted items
+                const allInventorySymbols = [ ...allIngredients, ...allCraftedItems ];
                 
-                // Base states
                 const baseTransitions = {
                     'q_start': {
-                        // Scan right until we find the separator
                         read: (symbol) => symbol !== SEPARATOR,
-                        actions: {
-                            '*': { newState: 'q_start', move: 1 }
-                        },
-                        // When we find the separator, move past it and start reading the recipe
+                        actions: { '*': { newState: 'q_start', move: 1 } },
                         fallback: { newState: 'q_get_recipe_item', move: 1 }
                     },
                     'q_get_recipe_item': {
-                        // Read the recipe section
                         read: (symbol) => symbol !== BLANK,
                         actions: {
-                            // If we see a 'Y', it's already processed, so skip it
                             [MARK_REC]: { newState: 'q_get_recipe_item', move: 1 },
                         },
-                        // If it's a new ingredient, mark it 'Y' and go find it in the inventory
-                        // The fallback function handles any symbol that isn't MARK_REC
                         fallback: (symbol) => {
-                             // Failsafe: if the recipe symbol isn't a known rune, reject.
-                             if (!allSymbols.includes(symbol)) {
+                             if (!allIngredients.includes(symbol)) { // Recipes MUST only contain ingredients
+                                rejectionReason = `Invalid ingredient in recipe: '${symbol}'`;
                                 return { newState: HALT_REJECT, move: 0 };
                              }
+                             rejectionReason = '';
                              return { newState: `q_goto_start_find_${symbol}`, write: MARK_REC, move: -1 };
                         }
                     },
                     'q_return_to_recipe': {
-                         // After finding an item, scan right past the inventory to get back to the recipe
                          read: (symbol) => symbol !== SEPARATOR,
-                         actions: {
-                             '*': {newState: 'q_return_to_recipe', move: 1}
-                         },
-                         // Once we hit the separator, move past it to the recipe section
+                         actions: { '*': {newState: 'q_return_to_recipe', move: 1} },
                          fallback: {newState: 'q_get_recipe_item', move: 1}
                     },
                     'q_success_cleanup': {
-                        // We hit a BLANK in the recipe, so the craft is successful. Now, clean up.
-                        // Move left and erase the recipe (Y's) until we hit the separator
                         read: (symbol) => symbol !== SEPARATOR,
-                        actions: {
-                            '*': {newState: 'q_success_cleanup', write: BLANK, move: -1},
-                        },
-                        // When we hit the separator, blank it and move to place the final item
+                        actions: { '*': {newState: 'q_success_cleanup', write: BLANK, move: -1}, },
                         fallback: { newState: 'q_place_item', write: BLANK, move: 1 } 
                     },
                     'q_place_item': {
-                        // Move to the end of the remaining inventory
                         read: (symbol) => symbol !== BLANK && symbol !== SEPARATOR,
-                        actions: {
-                            '*': {newState: 'q_place_item', move: 1}
-                        },
-                        // At the first blank spot, write the final item and accept
+                        actions: { '*': {newState: 'q_place_item', move: 1} },
                         fallback: {newState: HALT_ACCEPT, write: FINAL_ITEM, move: 0}
                     },
-                    [HALT_ACCEPT]: {}, // Halting state
-                    [HALT_REJECT]: {}  // Halting state
+                    [HALT_ACCEPT]: {},
+                    [HALT_REJECT]: {}
                 };
 
-                // Dynamically create states for each possible symbol
-                allSymbols.forEach(s => {
+                // Create search states only for ingredients (since recipes only contain these)
+                allIngredients.forEach(s => {
                     // State: Move head to the beginning of the tape to start searching
                     baseTransitions[`q_goto_start_find_${s}`] = {
-                        read: (symbol) => head > 0, // Read while head is not at the start
-                        actions: {
-                             '*': {newState: `q_goto_start_find_${s}`, move: -1} // Move left
-                        },
-                        // When head is at start (fallback), move right and start searching
+                        read: (symbol) => head > 0, 
+                        actions: { '*': {newState: `q_goto_start_find_${s}`, move: -1} },
                         fallback: {newState: `q_search_inv_${s}`, move: 1}
                     };
-                    // State: Search inventory (right of head) for the symbol 's'
+                    // State: Search inventory for the ingredient 's'
                     baseTransitions[`q_search_inv_${s}`] = {
-                        read: (symbol) => symbol !== SEPARATOR, // Read while in inventory
+                        read: (symbol) => symbol !== SEPARATOR,
                         actions: {
-                            // Found it! Mark it 'X', and go back to the recipe
+                            // Found the ingredient! Mark it 'X', and go back to the recipe
                             [s]: {newState: 'q_return_to_recipe', write: MARK_INV, move: 1},
-                            // Not it, keep scanning right
+                            // Not it, or it's a crafted item we can't use here, keep scanning right
                             '*': {newState: `q_search_inv_${s}`, move: 1}
                         },
-                        // If we hit the separator before finding 's', the craft fails
-                        fallback: {newState: HALT_REJECT, move: 0}
+                        fallback: (symbol) => {
+                            const item = ALMANAC.runes[s]; // Only runes are searched for
+                            const itemName = item ? item.name.split(' (')[0] : s;
+                            rejectionReason = `Missing ingredient: ${itemName} (${s})`;
+                            return {newState: HALT_REJECT, move: 0};
+                        }
                     };
                 });
                 return baseTransitions;
             }
 
-            /**
-             * Initializes the machine to its starting configuration.
-             */
-            function initialize() {
+            function initialize(inventoryString) {
                 transitions = buildTransitions();
-                const inventory = inventoryInput.value.split('');
+                const inventory = inventoryString.split('');
                 const recipe = recipeInput.value.split('');
 
-                // Determine the final item rune from the selected recipe key
                 const selectedKey = recipeSelect.value;
                 if (selectedKey && ALMANAC.recipes[selectedKey]) {
                     FINAL_ITEM = selectedKey;
                 } else {
-                    FINAL_ITEM = 'P'; // fallback
+                    const matchingRecipe = Object.entries(ALMANAC.recipes).find(([key, r]) => r.runes === recipeInput.value);
+                    FINAL_ITEM = matchingRecipe ? matchingRecipe[0] : '?';
                 }
                 
-                // Create the initial tape with a single blank on both ends
-                tape = [
-                    BLANK,
-                    ...inventory,
-                    SEPARATOR,
-                    ...recipe,
-                    BLANK
-                ];
-                // Start head at the beginning of the inventory (after single blank)
+                tape = [ BLANK, ...inventory, SEPARATOR, ...recipe, BLANK ];
                 head = 1;
                 currentState = 'q_start';
+                rejectionReason = '';
+                currentTargetRune = '';
+                historyStack = []; 
+                stepCount = 0; 
 
-                // Reset UI
                 resultSpan.textContent = '';
                 resultSpan.className = 'text-2xl font-bold mt-2 h-8';
+                acceptBanner.classList.add('hidden'); 
+                rejectBanner.classList.add('hidden'); 
+                currentRuleSpan.textContent = 'Waiting to start...'; 
                 
-                // Ensure single blank padding
                 normalizeTape();
                 updateUI();
-                setControls(true); // Enable simulation buttons
+                setControls(true);
+                stepBackButton.disabled = true; 
             }
 
-            /**
-             * Executes a single step of the Turing Machine.
-             */
-            /**
-             * Ensures the tape has exactly one BLANK at each edge.
-             * Trims excessive blanks and adds a blank if missing.
-             */
             function normalizeTape() {
-                // Trim leading blanks but leave one
                 while (tape.length > 1 && tape[0] === BLANK && tape[1] === BLANK) {
                     tape.shift();
                     head -= 1;
                 }
-                // If no leading blank, add one
-                if (tape[0] !== BLANK) {
+                if (tape.length === 0 || tape[0] !== BLANK) {
                     tape.unshift(BLANK);
                     head += 1;
                 }
-
-                // Trim trailing blanks but leave one
                 while (tape.length > 1 && tape[tape.length - 1] === BLANK && tape[tape.length - 2] === BLANK) {
                     tape.pop();
                 }
-                // If no trailing blank, add one
-                if (tape[tape.length - 1] !== BLANK) {
+                if (tape.length === 0 || tape[tape.length - 1] !== BLANK) {
                     tape.push(BLANK);
                 }
+                if (head < 0) head = 0;
             }
 
+            function stepBack() {
+                if (historyStack.length <= 1) return; // Need at least the initial state to step back to
+                sounds.playStepBack();
+                stopSimulation(); 
+
+                historyStack.pop(); 
+                const prevState = historyStack[historyStack.length - 1];
+                
+                // This shouldn't happen if length > 1, but added safety
+                if (!prevState) { 
+                    const inventoryString = inventorySlots.filter(s => s !== null).join('');
+                    initialize(inventoryString);
+                    return;
+                }
+
+                tape = [...prevState.tape];
+                head = prevState.head;
+                currentState = prevState.currentState;
+                currentTargetRune = prevState.currentTargetRune;
+                rejectionReason = prevState.rejectionReason;
+                stepCount = historyStack.length - 1; 
+
+                updateUI(); // Update UI with restored state
+                stepBackButton.disabled = (historyStack.length <= 1);
+                stepButton.disabled = false;
+                playPauseButton.disabled = false;
+                resultSpan.textContent = '';
+                acceptBanner.classList.add('hidden');
+                rejectBanner.classList.add('hidden');
+                 // Re-calculate the rule string for the state we stepped back *to*
+                const prevSymbol = tape[head];
+                const prevRuleString = calculateRuleString(currentState, prevSymbol);
+                currentRuleSpan.textContent = prevRuleString || 'Initial State';
+            }
+           
+
             function step() {
-                // Don't step if halted
                 if (currentState === HALT_ACCEPT || currentState === HALT_REJECT) {
                     stopSimulation();
                     displayResult();
                     return;
                 }
+                
+                // Save history *before* stepping
+                historyStack.push({
+                    tape: [...tape],
+                    head: head,
+                    currentState: currentState,
+                    currentTargetRune: currentTargetRune,
+                    rejectionReason: rejectionReason
+                });
+                stepCount++;
+                stepBackButton.disabled = false;
+                
+                sounds.playStep();
+                currentTargetRune = ''; 
 
+                if (head < 0) head = 0;
+                if (head >= tape.length) head = tape.length - 1;
+                
                 const currentSymbol = tape[head];
                 const stateDef = transitions[currentState];
                 
-                // Failsafe: if we enter an undefined state, reject.
                 if (!stateDef) {
                     console.error(`Error: Unknown state "${currentState}"`);
+                    rejectionReason = 'Machine Error: Unknown State';
                     currentState = HALT_REJECT;
-                    updateUI();
+                    updateUI('Error: Unknown State -> q_reject'); // Show error rule
+                    displayResult();
                     return;
                 }
 
                 let transition = null;
-
-                // Evaluate read predicate (if present)
+                let ruleString = ''; 
                 const readOk = typeof stateDef.read === 'function' ? stateDef.read(currentSymbol) : true;
 
                 if (readOk) {
-                    // If read predicate allows, prefer exact symbol action, then wildcard
                     if (stateDef.actions && stateDef.actions[currentSymbol] !== undefined) {
                         transition = stateDef.actions[currentSymbol];
                     } else if (stateDef.actions && stateDef.actions['*'] !== undefined) {
                         transition = stateDef.actions['*'];
-                    } else {
-                        // No action matched while read is ok: if fallback exists, use it
-                        if (stateDef.fallback) {
-                            transition = typeof stateDef.fallback === 'function' ? stateDef.fallback(currentSymbol) : stateDef.fallback;
-                        }
-                    }
-                } else {
-                    // read predicate failed: use fallback if available
-                    if (stateDef.fallback) {
+                    } else if (stateDef.fallback) {
                         transition = typeof stateDef.fallback === 'function' ? stateDef.fallback(currentSymbol) : stateDef.fallback;
                     }
+                } else if (stateDef.fallback) {
+                    transition = typeof stateDef.fallback === 'function' ? stateDef.fallback(currentSymbol) : stateDef.fallback;
                 }
 
-                // Special case: If in 'q_get_recipe_item' and we read a BLANK, it's a success.
-                // This overrides other logic for this specific state.
                 if(currentState === 'q_get_recipe_item' && currentSymbol === BLANK){
                      transition = {newState: 'q_success_cleanup', move: -1};
                 }
 
-                // --- Execute Transition ---
                 if (transition) {
+                    // Build Rule String based on the transition found
+                    ruleString = calculateRuleString(currentState, currentSymbol, transition);
+                   
                     currentState = transition.newState;
+                    
+                    if (currentState.startsWith('q_search_inv_')) {
+                        currentTargetRune = currentState.slice('q_search_inv_'.length);
+                    }
+
                     if (transition.write) {
                         tape[head] = transition.write;
                     }
                     if (transition.move === 1) head++;
                     else if (transition.move === -1) head--;
 
-                    // Normalize tape to ensure exactly one blank at each edge
                     normalizeTape();
-
                 } else {
-                    // If no transition was found, something went wrong. Reject.
+                    rejectionReason = 'Machine Error: No Valid Transition';
                     currentState = HALT_REJECT;
+                    ruleString = `δ(${currentState}, ${currentSymbol}) = ??? -> q_reject`; // Indicate no rule found
                 }
                 
-                updateUI(); // Redraw the tape and state
+                updateUI(ruleString); 
 
-                // Check for halt state again after the step
                 if (currentState === HALT_ACCEPT || currentState === HALT_REJECT) {
                     stopSimulation();
                     displayResult();
                 }
             }
+
+             // --- NEW: Helper to calculate rule string ---
+            /**
+             * Calculates the formal rule string for display.
+             * @param {string} state - The current state.
+             * @param {string} symbol - The symbol being read.
+             * @param {object|null} [transition=null] - The transition object found.
+             * @returns {string} The formatted rule string.
+             */
+            function calculateRuleString(state, symbol, transition = null) {
+                if (!transition) {
+                     // Check if it's a known halt state
+                     if (state === HALT_ACCEPT) return 'HALT_ACCEPT';
+                     if (state === HALT_REJECT) return 'HALT_REJECT';
+                    // Try to determine why no transition was found (e.g., fallback failed)
+                    const stateDef = transitions[state];
+                    if(stateDef) {
+                        const readOk = typeof stateDef.read === 'function' ? !stateDef.read(symbol) : false;
+                        if(readOk && !stateDef.fallback) return `δ(${state}, ${symbol}) = ??? (Read condition failed, no fallback)`;
+                        if(!readOk && !stateDef.actions?.[symbol] && !stateDef.actions?.['*'] && !stateDef.fallback) return `δ(${state}, ${symbol}) = ??? (No matching action or fallback)`;
+                    }
+                    return `δ(${state}, ${symbol}) = ??? -> q_reject`; // Generic error
+                }
+                
+                const write = transition.write || symbol; // If no write, it stays the same
+                const move = transition.move === 1 ? 'R' : (transition.move === -1 ? 'L' : 'S'); // S for Stay (move 0)
+                const nextState = transition.newState || state; // If no newState, it loops
+                return `δ(${state}, ${symbol}) = (${nextState}, ${write}, ${move})`;
+            }
+            // --- END NEW HELPER ---
             
             /**
              * Updates the DOM to reflect the current machine state.
+             * @param {string} [ruleString=""] - The rule string to display.
              */
-            function updateUI() {
+            function updateUI(ruleString = "") { 
                 tapeDiv.innerHTML = '';
+                
+                let recipeStartIndex = -1;
+                let recipeItemIndex = 0;
+                if (currentTargetRune) {
+                    recipeStartIndex = tape.indexOf(SEPARATOR) + 1;
+                }
+
                 tape.forEach((symbol, index) => {
                     const cell = document.createElement('div');
                     cell.className = 'tape-cell flex items-center justify-center font-mono';
                     if (index === head) {
-                        cell.classList.add('head'); // Highlight the head's position
+                        cell.classList.add('head');
                     }
-                    // Visual highlights for consumed inventory (X) and found recipe (Y)
                     if (symbol === MARK_INV) {
                         cell.classList.add('tape-cell-consumed');
                     } else if (symbol === MARK_REC) {
                         cell.classList.add('tape-cell-found');
+                        
+                        if (recipeStartIndex > -1 && index >= recipeStartIndex) {
+                            // Find the *original* rune, as recipeInput.value is unmodified
+                            const originalRecipeRune = recipeInput.value[recipeItemIndex];
+                            if (originalRecipeRune === currentTargetRune) {
+                                cell.classList.add('tape-cell-target');
+                            }
+                            recipeItemIndex++;
+                        }
+                    }
+                    if (ALMANAC.recipes[symbol]) {
+                        cell.classList.add('tape-cell-crafted');
                     }
                     cell.textContent = symbol;
                     tapeDiv.appendChild(cell);
                 });
+                
                 currentStateSpan.textContent = currentState;
                 
-                // Scroll the tape container to keep the head centered
+                const desc = STATE_DESCRIPTIONS[currentState] || `Unknown state: ${currentState}`;
+                stateTooltip.textContent = desc;
+
+                // Update Stats & Rule
+                stepCountSpan.textContent = stepCount;
+                headPosSpan.textContent = head;
+                if (ruleString) {
+                    currentRuleSpan.textContent = ruleString;
+                } else {
+                     // If no rule string passed (e.g., after stepBack), calculate it
+                     const currentSymbol = tape[head] || BLANK;
+                     currentRuleSpan.textContent = calculateRuleString(currentState, currentSymbol);
+                }
+
+
                 const headElement = tapeDiv.children[head];
                 if(headElement){
                     headElement.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 }
             }
 
-            /**
-             * Displays the final result of the simulation.
-             */
             function displayResult() {
-                // Track last craft result so user can apply the crafted item
+                acceptBanner.classList.add('hidden');
+                rejectBanner.classList.add('hidden');
+                currentTargetRune = '';
+                
                 if (currentState === HALT_ACCEPT) {
+                    sounds.playAccept();
                     resultSpan.textContent = 'Success!';
                     resultSpan.classList.add('text-green-400');
                     window.lastCraftResult = 'accept';
-                    // Show apply button so user can add the crafted item to inventory
-                    const applyBtn = document.getElementById('applyResult');
-                    if (applyBtn) applyBtn.classList.remove('hidden');
-                    // Ensure the final item rune appears on the tape; if it wasn't written
-                    // due to edge-case transitions, place it at the first suitable blank
-                    if (FINAL_ITEM && !tape.includes(FINAL_ITEM)) {
-                        // Find first blank that has at least one non-blank to its left
-                        let pos = tape.findIndex((sym, idx) => {
-                            if (sym !== BLANK) return false;
-                            const left = tape.slice(0, idx);
-                            return left.some(s => s !== BLANK && s !== MARK_REC);
-                        });
-                        if (pos === -1) {
-                            // fallback: place before the last blank
-                            pos = tape.length - 1;
-                        }
-                        tape[pos] = FINAL_ITEM;
-                        normalizeTape();
-                        updateUI();
+                    applyResultBtn.classList.remove('hidden');
+                    currentRuleSpan.textContent = 'HALT_ACCEPT'; 
+                    stepBackButton.disabled = true; // Cannot step back from halt
+                    stepButton.disabled = true;
+                    playPauseButton.disabled = true;
+                    
+                    const craftedItemKey = FINAL_ITEM;
+                    let craftedItemName = "Unknown Item";
+                    if (ALMANAC.recipes[craftedItemKey]) {
+                        craftedItemName = ALMANAC.recipes[craftedItemKey].name;
                     }
-                } else {
+                    
+                    acceptBanner.innerHTML = `Crafted: <strong class="font-medieval">${craftedItemName}</strong>!`;
+                    acceptBanner.classList.remove('hidden');
+
+                    updateUI(); 
+                    
+                    let craftedItemIndex = head; 
+                    if (tape[head] !== craftedItemKey) {
+                        craftedItemIndex = tape.lastIndexOf(craftedItemKey); 
+                    }
+
+                    if (craftedItemIndex > -1 && tapeDiv.children[craftedItemIndex]) {
+                        const cellToFlash = tapeDiv.children[craftedItemIndex];
+                        cellToFlash.classList.add('flash-success');
+                        setTimeout(() => {
+                            cellToFlash.classList.remove('flash-success');
+                        }, 1400); 
+                    }
+
+                } else { // HALT_REJECT
+                    sounds.playReject();
                     resultSpan.textContent = 'Failed!';
                     resultSpan.classList.add('text-red-400');
                     window.lastCraftResult = 'reject';
+                    currentRuleSpan.textContent = 'HALT_REJECT'; 
+                    stepBackButton.disabled = (historyStack.length <= 1); // Can still step back from reject
+                    stepButton.disabled = true;
+                    playPauseButton.disabled = true;
+
+                    rejectBanner.innerHTML = `Reason: <strong class="font-medieval">${rejectionReason || 'Unknown Error'}</strong>`;
+                    rejectBanner.classList.remove('hidden');
+                    
+                    rejectBanner.classList.add('flash-reject');
+                    setTimeout(() => {
+                        rejectBanner.classList.remove('flash-reject');
+                    }, 1400);
                 }
             }
 
-            /**
-             * Hides inputs, shows simulation area, and initializes the machine.
-             */
             function startSimulation() {
+                initAudio();
+                sounds.playStart();
+
+                const inventoryString = inventorySlots.filter(s => s !== null).join('');
+                
+                const validationMsg = validateInput(inventoryString);
+                if (validationMsg) {
+                    validationError.textContent = validationMsg;
+                    validationError.classList.remove('hidden');
+                    sounds.playReject();
+                    return; 
+                }
+                validationError.classList.add('hidden');
+
+                if (!recipeInput.value || recipeInput.value.trim() === '') {
+                    recipeSelect.focus();
+                    return;
+                }
+                
+                // --- MODIFIED: Use opacity for smooth transition ---
                 simulationArea.classList.remove('hidden');
-                // Disable all input controls
-                inventoryInput.disabled = true;
+                // Force reflow before adding opacity class
+                void simulationArea.offsetWidth; 
+                simulationArea.classList.remove('opacity-0');
+                
+                inventoryGrid.style.opacity = 0.5;
+                inventoryGrid.style.pointerEvents = 'none';
+                
                 recipeSelect.disabled = true;
                 clearInventory.disabled = true;
+                saveInventoryBtn.disabled = true;
+                loadInventoryBtn.disabled = true;
                 startButton.classList.add('hidden');
-                initialize();
+                
+                initialize(inventoryString); 
+
+                // Add initial state to history
+                historyStack.push({
+                    tape: [...tape],
+                    head: head,
+                    currentState: currentState,
+                    currentTargetRune: currentTargetRune,
+                    rejectionReason: rejectionReason
+                });
+                updateUI("Waiting to start...");
             }
 
-            /**
-             * Toggles the automatic execution of the 'step' function.
-             */
             function togglePlayPause() {
+                sounds.playClick();
                 if (isRunning) {
                     stopSimulation();
                 } else {
                     isRunning = true;
                     playPauseButton.textContent = 'Pause';
-                    stepButton.disabled = true; // Disable step while playing
-                    const delay = 1050 - speedSlider.value; // Speed from slider
+                    stepButton.disabled = true; 
+                    stepBackButton.disabled = true; 
+                    const delay = 1050 - speedSlider.value;
                     intervalId = setInterval(step, delay);
                 }
             }
 
-            /**
-             * Stops the automatic execution.
-             */
             function stopSimulation() {
                 isRunning = false;
                 playPauseButton.textContent = 'Play';
                 if (currentState !== HALT_ACCEPT && currentState !== HALT_REJECT) {
-                    stepButton.disabled = false; // Re-enable step if not halted
+                    stepButton.disabled = false;
+                    stepBackButton.disabled = (historyStack.length <= 1); 
                 }
                 clearInterval(intervalId);
                 intervalId = null;
             }
 
-            /**
-             * Resets the entire application to its initial view.
-             */
             function resetSimulation() {
                 stopSimulation();
-                simulationArea.classList.add('hidden');
-                // Re-enable all input controls
-                inventoryInput.disabled = false;
+                 // --- MODIFIED: Use opacity for smooth transition ---
+                simulationArea.classList.add('opacity-0');
+                // Wait for transition to finish before hiding completely
+                setTimeout(() => {
+                    simulationArea.classList.add('hidden');
+                }, 500); // Match transition duration in CSS
+                
+                inventoryGrid.style.opacity = 1;
+                inventoryGrid.style.pointerEvents = 'auto';
+
                 recipeSelect.disabled = false;
                 clearInventory.disabled = false;
+                saveInventoryBtn.disabled = false;
+                loadInventoryBtn.disabled = false;
                 startButton.classList.remove('hidden');
-                setControls(false); // Disable sim controls
+                setControls(false);
+
+                acceptBanner.classList.add('hidden');
+                acceptBanner.textContent = '';
+                rejectBanner.classList.add('hidden'); 
+                rejectBanner.textContent = '';
+                applyResultBtn.classList.add('hidden');
+                resultSpan.textContent = '';
+                resultSpan.className = 'text-2xl font-bold mt-2 h-8';
+                validationError.classList.add('hidden');
+
+                rejectionReason = '';
+                currentTargetRune = '';
+                historyStack = []; 
+                stepCount = 0; 
+                currentRuleSpan.textContent = 'Waiting to start...'; // Reset rule display
+                stepCountSpan.textContent = '0'; // Reset stats
+                headPosSpan.textContent = '0';
             }
             
-            /**
-             * Enables or disables the simulation control buttons.
-             */
             function setControls(enabled) {
-                const buttons = [playPauseButton, stepButton, resetButton];
+                const buttons = [playPauseButton, stepButton, resetButton, stepBackButton]; 
                 buttons.forEach(button => {
-                    button.disabled = !enabled;
-                    if(enabled){
+                    // Special case: stepBackButton is only enabled if history exists
+                    if (button === stepBackButton) {
+                         button.disabled = !enabled || historyStack.length <= 1;
+                    } else {
+                        button.disabled = !enabled;
+                    }
+                    
+                    if(!button.disabled){
                         button.classList.remove('btn-disabled');
                     } else {
                         button.classList.add('btn-disabled');
@@ -944,9 +1535,13 @@
             startButton.addEventListener('click', startSimulation);
             playPauseButton.addEventListener('click', togglePlayPause);
             stepButton.addEventListener('click', step);
-            resetButton.addEventListener('click', resetSimulation);
+            stepBackButton.addEventListener('click', stepBack); 
             
-            // Adjust simulation speed in real-time if it's already running
+            resetButton.addEventListener('click', () => {
+                sounds.playClick();
+                resetSimulation();
+            });
+            
             speedSlider.addEventListener('input', () => {
                 if(isRunning){
                     stopSimulation();
@@ -958,7 +1553,8 @@
             function main() {
                 populateInventoryPalette();
                 populateRecipeSelector();
-                setControls(false); // Initially disable sim controls
+                renderInventoryGrid(); 
+                setControls(false); 
             }
             
             main(); // Run the app setup
