@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Alchemist’s Assistant — Slides</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    .font-medieval { font-family: 'MedievalSharp', cursive; }
+    .slide { display: none; height: 100vh; width: 100vw; padding: 3rem 2rem; box-sizing: border-box; }
+    .slide.active { display: block; }
+    .bg-grad { background:
+      radial-gradient(1000px 600px at 20% -10%, rgba(249,215,28,.10), transparent),
+      radial-gradient(900px 700px at 120% 10%, rgba(75,90,138,.12), transparent),
+      linear-gradient(135deg, #0f172a 0%, #0b1220 55%, #0a0f1c 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    /* Glowing rune field overlay */
+    .rune-field { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    #deck { position: relative; z-index: 1; }
+    .footer { position: fixed; bottom: 12px; left: 0; right: 0; pointer-events: none; z-index: 2; }
+    .controls { pointer-events: auto; }
+
+    .rune { position: absolute; font-family: 'MedievalSharp', cursive; color: #f8fafc; opacity: .14; filter: blur(.3px);
+      text-shadow: 0 0 8px rgba(249,215,28,.35), 0 0 18px rgba(125,211,252,.15);
+      mix-blend-mode: screen; will-change: transform, opacity; animation: floatRune var(--dur, 24s) linear infinite; animation-delay: var(--delay, 0s);
+    }
+    @keyframes floatRune {
+      from { transform: translateY(var(--startY, 20vh)) translateX(0) rotate(var(--rot, 0deg)) scale(var(--s,1)); opacity: var(--op, .14); }
+      to   { transform: translateY(calc(var(--startY, 20vh) - 120vh)) translateX(var(--dx, 40px)) rotate(var(--rot, 0deg)) scale(var(--s,1)); opacity: var(--op, .14); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .rune { animation: none; opacity: .1; }
+    }
+    .bg-grad::before,.bg-grad::after{
+      content:""; position:absolute; inset:auto; pointer-events:none; filter: blur(60px); opacity:.25;
+    }
+    .bg-grad::before{ width:420px; height:420px; background: radial-gradient(circle at center, #f9d71c33, transparent 60%); top:-120px; left:-120px; }
+    .bg-grad::after{ width:520px; height:520px; background: radial-gradient(circle at center, #4b5a8a55, transparent 60%); bottom:-160px; right:-160px; }
+    .content { max-width: 1100px; margin: 0 auto; }
+    .kicker { letter-spacing: .08em; }
+    .footer { position: fixed; bottom: 12px; left: 0; right: 0; pointer-events: none; }
+    .controls { pointer-events: auto; }
+
+    /* Cards & visuals */
+    .card { background: linear-gradient(180deg, rgba(17,24,39,.6), rgba(11,17,31,.6)); border: 1px solid rgba(148,163,184,.2); box-shadow: 0 6px 24px rgba(0,0,0,.35); border-radius: 14px; }
+    .badge { display:inline-block; padding:.25rem .6rem; border-radius:9999px; font-weight:600; }
+    .pill { display:inline-flex; align-items:center; gap:.35rem; font-size:.8rem; padding:.25rem .55rem; border-radius:9999px; border:1px solid rgba(148,163,184,.25); background: rgba(15,23,42,.5); }
+    .icon { width: 22px; height: 22px; opacity:.9; }
+
+    /* Fragments (reveal on next) */
+    .frag { opacity: 0; transform: translateY(8px); transition: opacity .35s ease, transform .35s ease; }
+    .frag.show { opacity: 1; transform: none; }
+
+    /* Slide transitions */
+    .fade-in { animation: fadeIn .45s ease forwards; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px);} to {opacity:1; transform:none;} }
+
+    /* Progress bar */
+    .progress-track { height: 6px; background: rgba(148,163,184,.2); border-radius: 9999px; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #f9d71c, #7dd3fc); transition: width .25s ease; }
+
+    @media print { .slide { display: block !important; height: auto; page-break-after: always; } .controls, .progress, .progress-track { display:none; } body { background: #fff; color: #111;} }
+  </style>
+</head>
+<body class="bg-grad text-slate-100">
+
+  <!-- Glowing rune background -->
+  <div id="runeField" class="rune-field" aria-hidden="true"></div>
+
+  <div id="deck">
+    <!-- Slide 1 -->
+    <section class="slide active">
+      <div class="content h-full flex flex-col justify-center">
+        <h1 class="text-5xl md:text-7xl font-extrabold font-medieval text-yellow-300 drop-shadow">The Alchemist’s Assistant</h1>
+        <p class="mt-3 text-2xl md:text-3xl text-slate-300">A Turing Machine‑Powered Crafting Simulator</p>
+        <div class="mt-10 grid sm:grid-cols-3 gap-4 text-slate-200">
+          <div class="card p-4">
+            <div class="kicker text-xs uppercase text-slate-400">Group Members</div>
+            <ul class="mt-1 space-y-1 list-none">
+              <li>Alorro, Kurt Allen R.</li>
+              <li>Bocala, Duke Salfred B.</li>
+              <li>Dañocup, Jethro Roland T.</li>
+              <li>Maravilla, Christine Joy D.</li>
+              <li>Senibalo, Jazylle Mae B.</li>
+            </ul>
+          </div>
+          <div class="card p-4">
+            <div class="kicker text-xs uppercase text-slate-400">Course & Section</div>
+            <div class="mt-1">BSCS 3‑B AI</div>
+          </div>
+          <div class="card p-4">
+            <div class="kicker text-xs uppercase text-slate-400">Instructor</div>
+            <div class="mt-1">Dr. Ma. Luche Sabayle</div>
+          </div>
+        </div>
+        <div class="mt-10 text-sm text-slate-400">Tip: Use ← → or Space/Shift+Space to navigate</div>
+      </div>
+    </section>
+
+    <!-- Slide 3: Automata 101 -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-5xl font-bold font-medieval text-yellow-300">If You’re New to Automata…</h2>
+        <div class="grid md:grid-cols-3 gap-5 mt-6">
+          <div class="card p-6 frag">
+            <div class="kicker text-xs uppercase text-slate-400">What are Automata?</div>
+            <p class="mt-2 text-lg">Abstract machines to reason about what computers can do.</p>
+          </div>
+          <div class="card p-6 frag">
+            <div class="kicker text-xs uppercase text-slate-400">Mental Model</div>
+            <p class="mt-2 text-lg">Think recipe‑following robots: read symbols, change them, move.</p>
+          </div>
+          <div class="card p-6 frag">
+            <div class="kicker text-xs uppercase text-slate-400">Power Levels</div>
+            <p class="mt-2"><span class="pill">Finite</span> <span class="pill">Pushdown</span> <span class="pill">Turing</span></p>
+            <p class="text-slate-300 mt-2">Calculators → spellbooks → full wizards.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 4: TM Plainly -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-5xl font-bold font-medieval text-yellow-300">Turing Machines, Plainly</h2>
+        <div class="grid md:grid-cols-3 gap-5 mt-6">
+          <div class="card p-5 frag"><div class="text-xl font-semibold">Tape</div><p class="mt-2">An (unbounded) strip of boxes holding symbols.</p></div>
+          <div class="card p-5 frag"><div class="text-xl font-semibold">Head</div><p class="mt-2">Reads a box, can write, then move L/R.</p></div>
+          <div class="card p-5 frag"><div class="text-xl font-semibold">States</div><p class="mt-2">The machine’s current “step” or mode.</p></div>
+          <div class="card p-5 frag"><div class="text-xl font-semibold">Rules δ</div><p class="mt-2 font-mono">δ(q, s) = (q’, write, move)</p></div>
+          <div class="card p-5 frag"><div class="text-xl font-semibold">Halting</div><p class="mt-2">Accept (✓) or Reject (✗) when done.</p></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Slide 2 -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-5xl font-bold font-medieval text-yellow-300">Introduction</h2>
+        <div class="mt-8 grid md:grid-cols-3 gap-5">
+          <div class="card p-6 frag">
+            <div class="pill"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 2H5a2 2 0 00-2 2v16l4-4h12a2 2 0 002-2V4a2 2 0 00-2-2z"/></svg>What</div>
+            <p class="mt-3 text-lg">A visual single‑tape TM as a crafting game.</p>
+          </div>
+          <div class="card p-6 frag">
+            <div class="pill"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 6v6l4 2"/></svg>How</div>
+            <p class="mt-3 text-lg">Inventory + recipe on a tape; step through δ.</p>
+          </div>
+          <div class="card p-6 frag">
+            <div class="pill"><svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>Why</div>
+            <p class="mt-3 text-lg">Make automata tangible, fun, and memorable.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 3 -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">Project Overview</h2>
+        <div class="grid md:grid-cols-3 gap-5 mt-6">
+          <div class="card p-6 frag">
+            <div class="text-xl font-semibold">Inventory Grid</div>
+            <p class="text-slate-300 mt-2">Drag & drop runes into 8 slots.</p>
+          </div>
+          <div class="card p-6 frag">
+            <div class="text-xl font-semibold">Recipe Picker</div>
+            <p class="text-slate-300 mt-2">Dropdown auto‑fills recipe runes.</p>
+          </div>
+          <div class="card p-6 frag">
+            <div class="text-xl font-semibold">Will Produce</div>
+            <p class="text-slate-300 mt-2">Shows the output rune on accept.</p>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-5 mt-6">
+          <div class="card p-6 frag"><span class="badge bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">Accept</span>
+            <p class="mt-3">Mark Y + X → cleanup → write output rune → <span class="font-mono">q_accept</span>.</p>
+          </div>
+          <div class="card p-6 frag"><span class="badge bg-rose-500/20 text-rose-300 border border-rose-500/40">Reject</span>
+            <p class="mt-3">If any ingredient missing → <span class="font-mono">q_reject</span> with reason.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 5 -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">Simulator Features</h2>
+        <div class="grid md:grid-cols-3 gap-5 mt-6">
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Drag & Drop</div><p class="mt-2">Grid + palette delete.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Compendium</div><p class="mt-2">Ingredients & recipes in‑app.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Tape Viz</div><p class="mt-2">Head + X/Y highlights.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">State & Rule</div><p class="mt-2">Tooltip + δ(state,symbol).</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Controls</div><p class="mt-2">Play, step, step‑back, speed, reset.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Feedback</div><p class="mt-2">Accept/reject banners + flash.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Sound</div><p class="mt-2">Start, step, accept, reject.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Stack</div><p class="mt-2">HTML + Tailwind + JS.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 6 -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">Project Objectives</h2>
+        <div class="grid md:grid-cols-4 gap-5 mt-6">
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Apply</div><p class="mt-2">Automata in practice.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Model</div><p class="mt-2">Single‑tape logic.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Educate</div><p class="mt-2">Make it visual.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Create</div><p class="mt-2">Playful experience.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 7 -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">Core Concept: Multi‑Set Problem</h2>
+        <div class="grid md:grid-cols-2 gap-6 mt-6">
+          <div class="card p-6 frag">
+            <div class="font-mono text-xl">_ ggws#wg _</div>
+            <div class="mt-3 badge bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">Accept</div>
+          </div>
+          <div class="card p-6 frag">
+            <div class="font-mono text-xl">_ gws#gg _</div>
+            <div class="mt-3 badge bg-rose-500/20 text-rose-300 border border-rose-500/40">Reject</div>
+          </div>
+        </div>
+        <div class="mt-6 card p-4 frag"><span class="kicker text-xs uppercase text-slate-400">Language</span>
+          <div class="mt-1 text-lg">L = { inv#recipe | every symbol in recipe has a matching symbol in inv }</div></div>
+      </div>
+    </section>
+
+    <!-- Slide 8 -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">Formal Definition</h2>
+        <p class="mt-4 text-lg font-mono">M = (Q, Σ, Γ, δ, q_start, q_accept, q_reject)</p>
+        <div class="mt-6 grid md:grid-cols-2 gap-6 text-lg">
+          <div class="card p-5 frag"><div class="kicker text-xs uppercase text-slate-400">States Q</div>
+            <p class="mt-2">Core states + generated search states per ingredient.</p></div>
+          <div class="card p-5 frag"><div class="kicker text-xs uppercase text-slate-400">Input Σ</div>
+            <p class="mt-2">{ runes in ALMANAC.runes, # }</p></div>
+          <div class="card p-5 frag"><div class="kicker text-xs uppercase text-slate-400">Tape Γ</div>
+            <p class="mt-2">Σ ∪ { _, X, Y } ∪ { output runes }</p></div>
+          <div class="card p-5 frag"><div class="kicker text-xs uppercase text-slate-400">δ</div>
+            <p class="mt-2">Deterministic; explicit fallbacks.</p></div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-5 mt-6">
+          <div class="card p-5 frag"><span class="pill"><span class="font-mono">q_start</span></span> <span class="ml-2">Scan to # then to recipe.</span></div>
+          <div class="card p-5 frag"><span class="pill"><span class="font-mono">q_accept / q_reject</span></span> <span class="ml-2">Halting with animated UI.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 9 -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">Tape Structure & Symbols</h2>
+        <p class="mt-4 text-lg">Initial configuration (normalized edges):</p>
+        <div class="mt-4 font-mono text-2xl bg-slate-800/60 rounded p-6 border border-slate-700 text-center">_ [Inventory] # [Recipe] _</div>
+        <div class="grid md:grid-cols-5 gap-3 mt-6">
+          <div class="card p-3 text-center frag"><span class="pill">_</span><div class="mt-2">blank</div></div>
+          <div class="card p-3 text-center frag"><span class="pill">#</span><div class="mt-2">separator</div></div>
+          <div class="card p-3 text-center frag"><span class="pill">X</span><div class="mt-2">consumed</div></div>
+          <div class="card p-3 text-center frag"><span class="pill">Y</span><div class="mt-2">fulfilled</div></div>
+          <div class="card p-3 text-center frag"><span class="pill">P/S/B…</span><div class="mt-2">output rune</div></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Slide 10 -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">State Flow</h2>
+        <div class="grid gap-4 mt-6">
+          <div class="card p-5 frag"><span class="pill">1</span> <span class="ml-2">Initialization → find # → move to recipe</span></div>
+          <div class="card p-5 frag"><span class="pill">2</span> <span class="ml-2">Loop → read recipe item → mark Y → rewind</span></div>
+          <div class="card p-5 frag"><span class="pill">3</span> <span class="ml-2">Search inventory → match → mark X; else → q_reject</span></div>
+          <div class="card p-5 frag"><span class="pill">4</span> <span class="ml-2">Cleanup → erase recipe & # → write output → q_accept</span></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Slide 11: Worked Example -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">Worked Example (Beginner)</h2>
+        <div class="card p-5">
+          <div class="kicker text-xs uppercase text-slate-400">Setup</div>
+          <div class="mt-2 grid md:grid-cols-3 gap-4 text-lg">
+            <div class="frag"><span class="font-semibold">Recipe:</span> Health Potion (P) = <span class="font-mono">w g</span></div>
+            <div class="frag"><span class="font-semibold">Inventory:</span> <span class="font-mono">w g s</span></div>
+            <div class="frag"><span class="font-semibold">Tape:</span> <span class="font-mono">_ wgs#wg _</span></div>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-5 mt-6">
+          <div class="card p-5 frag"><span class="pill">1</span> Mark recipe <span class="font-mono">w</span> → Y; rewind → find <span class="font-mono">w</span> → mark X.</div>
+          <div class="card p-5 frag"><span class="pill">2</span> Next <span class="font-mono">g</span> → mark Y; rewind → find <span class="font-mono">g</span> → mark X.</div>
+          <div class="card p-5 frag"><span class="pill">3</span> All matched → cleanup → write <span class="font-mono">P</span> → Accept ✓.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 12 -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">Demonstration</h2>
+        <div class="grid md:grid-cols-2 gap-5 mt-6">
+          <div class="card p-6 frag"><span class="pill">1</span> Add (w,g); pick Health Potion (P).</div>
+          <div class="card p-6 frag"><span class="pill">2</span> Start → see Y on recipe, X in inventory.</div>
+          <div class="card p-6 frag"><span class="pill">3</span> State tooltip + δ rule updates.</div>
+          <div class="card p-6 frag"><span class="pill">4</span> Play/Pause/Step + Step‑back.</div>
+          <div class="card p-6 frag"><span class="pill">5</span> Accept banner + crafted flash → Apply Result.</div>
+          <div class="card p-6 frag"><span class="pill">6</span> Save/Load; show a reject case.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 13 -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">The Alchemist’s Compendium</h2>
+        <div class="grid md:grid-cols-3 gap-5 mt-6">
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Ingredients</div><p class="mt-2">Rune → name → description.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Recipes</div><p class="mt-2">Dropdown + modal lists all crafts.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">Purpose</div><p class="mt-2">No memorization; Almanac powers UI.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 14 -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">UX & Implementation Notes</h2>
+        <div class="grid md:grid-cols-3 gap-5 mt-6">
+          <div class="card p-5 frag">Single‑blank edges; normalize each step.</div>
+          <div class="card p-5 frag">X=red, Y=green; target pulsing.</div>
+          <div class="card p-5 frag">Animated accept/reject + sounds.</div>
+          <div class="card p-5 frag">Wildcard only when read() true.</div>
+          <div class="card p-5 frag">Stats: steps & head; δ rule display.</div>
+          <div class="card p-5 frag">Step‑back for teaching/debugging.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 15: Glossary -->
+    <section class="slide">
+      <div class="content py-10">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">Glossary (Beginner)</h2>
+        <div class="grid md:grid-cols-3 gap-5 mt-6">
+          <div class="card p-5 frag"><div class="text-xl font-semibold">Alphabet</div><p class="mt-2">Allowed symbols (runes + # + X/Y + _).</p></div>
+          <div class="card p-5 frag"><div class="text-xl font-semibold">State</div><p class="mt-2">The machine’s current mode/step.</p></div>
+          <div class="card p-5 frag"><div class="text-xl font-semibold">Transition δ</div><p class="mt-2">What to write, where to move, next state.</p></div>
+          <div class="card p-5 frag"><div class="text-xl font-semibold">Accept/Reject</div><p class="mt-2">Two halting outcomes.</p></div>
+          <div class="card p-5 frag"><div class="text-xl font-semibold">Deterministic</div><p class="mt-2">At most one action per situation.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 16 -->
+    <section class="slide">
+      <div class="content h-full flex flex-col justify-center">
+        <h2 class="text-3xl md:text-4xl font-bold font-medieval text-yellow-300">How to Run</h2>
+        <div class="grid md:grid-cols-3 gap-5 mt-6">
+          <div class="card p-6 frag"><div class="text-xl font-semibold">1</div><p class="mt-2">Open <span class="font-mono">index.html</span>.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">2</div><p class="mt-2">Drag runes, choose recipe, press <span class="font-semibold">Begin</span>.</p></div>
+          <div class="card p-6 frag"><div class="text-xl font-semibold">3</div><p class="mt-2">Observe, step, explore Compendium.</p></div>
+        </div>
+        <div class="mt-10 text-slate-400">Thank you!</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer / Controls -->
+  <div class="footer">
+    <div class="content flex items-center justify-between text-sm">
+      <div class="progress text-slate-400"><span id="counter">1</span>/<span id="total">13</span></div>
+      <div class="flex-1 mx-4">
+        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+      </div>
+      <div class="controls flex gap-2">
+        <button id="prevBtn" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 border border-slate-600">← Prev</button>
+        <button id="nextBtn" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 border border-slate-600">Next →</button>
+        <div class="hidden sm:flex items-center gap-2 ml-2">
+          <button id="musicToggle" class="px-3 py-1 rounded bg-slate-700 hover:bg-slate-600 border border-slate-600">Music: Off</button>
+          <input id="musicVol" type="range" min="0" max="100" value="20" class="w-24" />
+        </div>
+        <button id="openAppBtn" class="ml-2 px-3 py-1 rounded bg-emerald-700 hover:bg-emerald-600 border border-emerald-600">Open App ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const counter = document.getElementById('counter');
+    const total = document.getElementById('total');
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const progressBar = document.getElementById('progressBar');
+    const runeField = document.getElementById('runeField');
+  const musicToggle = document.getElementById('musicToggle');
+  const musicVol = document.getElementById('musicVol');
+  const openAppBtn = document.getElementById('openAppBtn');
+
+    // Simple audio engine for fragment pop sounds
+    let audioCtx = null;
+    function ensureAudio() {
+      if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch {}
+      }
+      return audioCtx;
+    }
+    function playPop() {
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      // Soft plucky pop
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(880, now); // A5
+      // quick upward chirp for a magical feel
+      osc.frequency.exponentialRampToValueAtTime(1320, now + 0.06);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.12, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.16);
+    }
+
+  // Ambient background music (optional, user-activated)
+  // Replaced with a more musical calm pad + light delay and a simple chord progression
+  let musicOn = false;
+  let musicMaster = null;   // Master gain for music
+  let musicDelay = null;    // Delay node for space
+  let musicFBGain = null;   // Feedback amount
+  let musicScheduler = null;// Interval id for scheduling bars
+  let musicNextBarTime = 0; // AudioContext time for next bar
+  const musicTempo = 60;    // BPM (slow and calm)
+  const musicBarBeats = 4;  // 4/4
+  const musicActiveNodes = new Set(); // Track nodes to stop/cleanup
+
+    function setMusicVolumeFromSlider() {
+      if (!musicMaster) return;
+      const v = (parseFloat(musicVol?.value || '0') || 0) / 100; // 0..1
+      // Map to a gentle range (0..0.18)
+      const gain = v * 0.18;
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      musicMaster.gain.cancelScheduledValues(ctx.currentTime);
+      musicMaster.gain.setTargetAtTime(gain, ctx.currentTime, 0.03);
+    }
+
+    function startAmbient() {
+      if (musicOn) return;
+      const ctx = ensureAudio();
+      if (!ctx) return;
+
+      // Master and space
+      musicMaster = ctx.createGain();
+      musicMaster.gain.value = 0.0001;
+      musicDelay = ctx.createDelay(2.5); // up to 2.5s delay
+      musicDelay.delayTime.value = 0.45; // gentle short space
+      musicFBGain = ctx.createGain();
+      musicFBGain.gain.value = 0.22;
+      musicDelay.connect(musicFBGain);
+      musicFBGain.connect(musicDelay); // feedback loop
+      musicDelay.connect(musicMaster);
+      musicMaster.connect(ctx.destination);
+
+      // Musical materials: simple A minor progression over 4 bars
+      // Am, F, C, G (feels familiar and calm)
+      const chordProg = [
+        [57, 60, 64], // Am  (A3 C4 E4)
+        [53, 57, 60], // F   (F3 A3 C4)
+        [48, 52, 55], // C   (C3 E3 G3)
+        [55, 59, 62]  // G   (G3 B3 D4)
+      ];
+
+      const beatDur = 60 / musicTempo; // seconds per beat
+      const barDur = beatDur * musicBarBeats;
+      let barIndex = 0;
+      musicNextBarTime = ctx.currentTime + 0.05; // start shortly after toggle
+
+      // Schedules a pad chord at time t with slow attack/release
+      function scheduleChord(midis, t) {
+        midis.forEach((m, i) => {
+          const freq = 440 * Math.pow(2, (m - 69) / 12);
+          const osc = ctx.createOscillator();
+          osc.type = i === 0 ? 'sine' : (i === 1 ? 'triangle' : 'sine');
+          const pan = ctx.createStereoPanner();
+          pan.pan.value = i === 0 ? -0.25 : (i === 2 ? 0.25 : 0.0);
+          const g = ctx.createGain();
+          g.gain.value = 0.0001;
+
+          // Route: osc -> pan -> (master & delay)
+          osc.connect(pan);
+          pan.connect(g);
+          g.connect(musicMaster);
+          g.connect(musicDelay);
+
+          const atk = 0.8, rel = 2.0, sus = 0.08; // gentle envelope
+          const on = t;
+          const off = t + barDur;
+          g.gain.setValueAtTime(0.0001, on);
+          g.gain.linearRampToValueAtTime(sus, on + atk);
+          g.gain.setValueAtTime(sus, off - 0.2);
+          g.gain.linearRampToValueAtTime(0.0001, off + rel);
+
+          osc.frequency.setValueAtTime(freq * (1 + (i - 1) * 0.002), on); // slight detune for upper/lower
+          osc.start(on);
+          osc.stop(off + rel + 0.1);
+
+          // Track for cleanup
+          musicActiveNodes.add(osc);
+          musicActiveNodes.add(pan);
+          musicActiveNodes.add(g);
+          // Cleanup after stop
+          setTimeout(() => {
+            try { osc.disconnect(); pan.disconnect(); g.disconnect(); } catch {}
+            musicActiveNodes.delete(osc); musicActiveNodes.delete(pan); musicActiveNodes.delete(g);
+          }, (off + rel - ctx.currentTime + 0.2) * 1000);
+        });
+
+        // Occasional bell accent on the tonic every other bar
+        if (barIndex % 2 === 0) {
+          const bellFreq = 440 * Math.pow(2, (57 - 69) / 12); // A3
+          const bell = ctx.createOscillator();
+          bell.type = 'sine';
+          const bellGain = ctx.createGain();
+          bellGain.gain.value = 0.0001;
+          const bellPan = ctx.createStereoPanner();
+          bellPan.pan.value = Math.random() < 0.5 ? -0.15 : 0.15;
+          bell.connect(bellGain);
+          bellGain.connect(bellPan);
+          bellPan.connect(musicDelay);
+          bellPan.connect(musicMaster);
+
+          const on = t + 0.25; // shortly after chord start
+          const off = on + 0.8;
+          bell.frequency.setValueAtTime(bellFreq * 2, on); // higher octave
+          bellGain.gain.setValueAtTime(0.0001, on);
+          bellGain.gain.linearRampToValueAtTime(0.04, on + 0.05);
+          bellGain.gain.exponentialRampToValueAtTime(0.0001, off);
+          bell.start(on);
+          bell.stop(off + 0.05);
+
+          musicActiveNodes.add(bell); musicActiveNodes.add(bellGain); musicActiveNodes.add(bellPan);
+          setTimeout(() => {
+            try { bell.disconnect(); bellGain.disconnect(); bellPan.disconnect(); } catch {}
+            musicActiveNodes.delete(bell); musicActiveNodes.delete(bellGain); musicActiveNodes.delete(bellPan);
+          }, (off - ctx.currentTime + 0.2) * 1000);
+        }
+      }
+
+      // Schedule first chords and keep scheduling per bar
+      scheduleChord(chordProg[barIndex % chordProg.length], musicNextBarTime);
+      barIndex++;
+      musicNextBarTime += barDur;
+
+      musicScheduler = setInterval(() => {
+        const now = ctx.currentTime;
+        while (musicNextBarTime < now + 0.4) { // schedule a bit ahead
+          scheduleChord(chordProg[barIndex % chordProg.length], musicNextBarTime);
+          barIndex++;
+          musicNextBarTime += barDur;
+        }
+      }, 180); // lightweight scheduler
+
+      musicOn = true;
+      setMusicVolumeFromSlider();
+      musicMaster.gain.exponentialRampToValueAtTime(Math.max(musicMaster.gain.value, 0.02), ctx.currentTime + 0.6);
+    }
+
+    function stopAmbient() {
+      if (!musicOn) return;
+      const ctx = ensureAudio();
+      if (ctx && musicMaster) {
+        try { musicMaster.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.05); } catch {}
+      }
+      if (musicScheduler) { clearInterval(musicScheduler); musicScheduler = null; }
+      // Stop and disconnect all active nodes shortly after fade-out
+      setTimeout(() => {
+        musicActiveNodes.forEach(n => { try { n.stop?.(); } catch {} try { n.disconnect?.(); } catch {} });
+        musicActiveNodes.clear();
+        try { musicDelay?.disconnect(); } catch {}
+        try { musicFBGain?.disconnect(); } catch {}
+        try { musicMaster?.disconnect(); } catch {}
+        musicDelay = null; musicFBGain = null; musicMaster = null;
+      }, 400);
+      musicOn = false;
+    }
+
+    // Precompute fragments per slide
+    const frags = slides.map(s => Array.from(s.querySelectorAll('.frag')));
+    const totalSlides = slides.length;
+    total.textContent = String(totalSlides);
+
+    let slideIdx = 0;
+    let fragIdx = 0; // index of next fragment to show on this slide
+
+    function updateProgress() {
+      const fragTotal = frags[slideIdx].length;
+      const ratio = (slideIdx + (fragTotal ? fragIdx/(fragTotal+1) : 0)) / (totalSlides - 1 || 1);
+      progressBar.style.width = Math.max(0, Math.min(100, ratio*100)) + '%';
+    }
+
+    function render() {
+      slides.forEach((s, i) => s.classList.toggle('active', i === slideIdx));
+      // Show fragments up to fragIdx
+      frags[slideIdx].forEach((el, i) => el.classList.toggle('show', i < fragIdx));
+      counter.textContent = String(slideIdx + 1);
+      updateProgress();
+      // Hash as #slide-frag (1-based)
+      location.hash = `#${slideIdx+1}-${fragIdx}`;
+    }
+
+    function gotoSlide(n, revealAll=false) {
+      slideIdx = Math.max(0, Math.min(totalSlides - 1, n));
+      fragIdx = revealAll ? frags[slideIdx].length : 0;
+      render();
+    }
+
+    function next() {
+      const fragTotal = frags[slideIdx].length;
+      if (fragIdx < fragTotal) { fragIdx++; render(); playPop(); return; }
+      if (slideIdx < totalSlides - 1) { slideIdx++; fragIdx = 0; render(); }
+    }
+    function prev() {
+      if (fragIdx > 0) { fragIdx--; render(); return; }
+      if (slideIdx > 0) { slideIdx--; fragIdx = frags[slideIdx].length; render(); }
+    }
+
+    nextBtn.addEventListener('click', next);
+    prevBtn.addEventListener('click', prev);
+
+    window.addEventListener('keydown', (e) => {
+      if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || (e.code === 'Space' && !e.shiftKey)) { e.preventDefault(); next(); }
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp' || (e.code === 'Space' && e.shiftKey)) { e.preventDefault(); prev(); }
+      if (e.key === 'Home') gotoSlide(0);
+      if (e.key === 'End') gotoSlide(totalSlides - 1, true);
+      if (e.key.toLowerCase() === 'f') { try { document.documentElement.requestFullscreen(); } catch {} }
+      if (e.key.toLowerCase() === 'g') { // toggle glowing runes
+        runeField.classList.toggle('hidden');
+      }
+      if (e.key.toLowerCase() === 'm') { // toggle music
+        const willTurnOn = !musicOn;
+        if (willTurnOn) { startAmbient(); musicToggle && (musicToggle.textContent = 'Music: On'); }
+        else { stopAmbient(); musicToggle && (musicToggle.textContent = 'Music: Off'); }
+      }
+      if (e.key.toLowerCase() === 'o') { // open app
+        try { window.location.href = 'index.html'; } catch {}
+      }
+    });
+
+    // Deep link: #S-F
+    (function initFromHash(){
+      const m = location.hash.match(/#(\d+)(?:-(\d+))?/);
+      if (m) {
+        const s = Math.max(1, Math.min(totalSlides, parseInt(m[1],10))) - 1;
+        slideIdx = s;
+        fragIdx = Math.max(0, Math.min(frags[s].length, parseInt(m[2]||'0',10)));
+      }
+      render();
+    })();
+
+    // Generate glowing rune particles
+    (function initRuneField(){
+      if (!runeField) return;
+      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const RUNES = ['w','r','s','i','g','c','m','b','v','f','h','k','e','z','o','l','t','d','P','T','V','Z','E','K','A','S','B','H','W','L','D','O'];
+      const baseCount = Math.floor(Math.min(80, Math.max(28, window.innerWidth / 24)));
+      const COUNT = prefersReduced ? Math.floor(baseCount * 0.35) : baseCount;
+      const docFrag = document.createDocumentFragment();
+      for (let i = 0; i < COUNT; i++) {
+        const span = document.createElement('span');
+        span.className = 'rune';
+        span.textContent = RUNES[Math.floor(Math.random() * RUNES.length)];
+        const size = 14 + Math.random() * 30; // 14–44 px
+        const x = Math.random() * 100; // vw%
+        const y = Math.random() * 100; // vh%
+        const dur = 18 + Math.random() * 20; // 18–38s
+        const delay = -Math.random() * dur; // start mid‑cycle for spread
+        const dx = (Math.random() * 80 - 40) + 'px'; // drift left/right
+        const scale = 0.9 + Math.random() * 0.7;
+        const rot = (Math.random() * 40 - 20) + 'deg';
+        const op = 0.08 + Math.random() * 0.12;
+        span.style.left = x + 'vw';
+        span.style.top = y + 'vh';
+        span.style.fontSize = size + 'px';
+        span.style.setProperty('--dur', dur + 's');
+        span.style.setProperty('--delay', delay + 's');
+        span.style.setProperty('--startY', y + 'vh');
+        span.style.setProperty('--dx', dx);
+        span.style.setProperty('--s', scale);
+        span.style.setProperty('--rot', rot);
+        span.style.setProperty('--op', op);
+        docFrag.appendChild(span);
+      }
+      runeField.appendChild(docFrag);
+      // Rebuild on resize (cheap debounce)
+      let to;
+      window.addEventListener('resize', () => {
+        clearTimeout(to);
+        to = setTimeout(() => {
+          runeField.innerHTML = '';
+          initRuneField();
+        }, 250);
+      }, { passive: true });
+    })();
+
+    // Wire music UI
+    if (musicToggle) {
+      musicToggle.addEventListener('click', () => {
+        if (!musicOn) { startAmbient(); musicToggle.textContent = 'Music: On'; }
+        else { stopAmbient(); musicToggle.textContent = 'Music: Off'; }
+      });
+    }
+    if (musicVol) {
+      musicVol.addEventListener('input', setMusicVolumeFromSlider);
+    }
+    if (openAppBtn) {
+      openAppBtn.addEventListener('click', () => {
+        window.location.href = 'index.html';
+      });
+    }
+  </script>
+</body>
+</html>

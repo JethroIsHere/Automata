@@ -6,7 +6,6 @@ A lightweight Turing Machine–powered crafting simulator with an accompanying s
 
 - `index.html` — Interactive app (TM tape visualization, beginner guide, compendium, crafting flow)
 - `slides.html` — Slide deck (glowing rune background, fragment reveals, music/SFX, navigation)
-- `images/` — Assets (if any)
 
 ## Quick start
 

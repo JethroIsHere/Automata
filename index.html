@@ -23,6 +23,21 @@
             animation: backgroundGradient 25s ease infinite; /* Slow animation */
             color: #e0e0e0;
         }
+        /* Background accents for extra depth */
+        .bg-accents {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .accent {
+            position: absolute;
+            filter: blur(60px);
+            opacity: 0.22;
+            border-radius: 50%;
+        }
+        .accent-1 { width: 320px; height: 320px; background: #f9d71c; top: 8%; left: 6%; }
+        .accent-2 { width: 420px; height: 420px; background: #7aa0cc; bottom: 12%; right: 8%; }
         /* --- END NEW --- */
         
         .font-medieval {
@@ -297,6 +312,7 @@
             border-radius: 8px;
             box-shadow: 0 0 30px rgba(75, 90, 138, 0.7);
         }
+        .modal-content h2 + p { color: #cbd5e1; }
         .close-modal {
             color: #aaa;
             float: right;
@@ -347,6 +363,11 @@
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
+    <!-- Decorative background accents -->
+    <div class="bg-accents">
+        <span class="accent accent-1"></span>
+        <span class="accent accent-2"></span>
+    </div>
     <!-- Main Application Container -->
     <div id="app" class="w-full max-w-4xl mx-auto">
         <div class="card rounded-lg p-6 md:p-8">
@@ -356,9 +377,15 @@
                 <p class="text-lg text-gray-300 mt-2">A Turing Machine-Powered Crafting Simulator</p>
             </header>
 
-            <!-- Compendium Button -->
-            <div class="text-center mb-6">
-                <button id="compendiumButton" class="btn-secondary text-sm py-2 px-4 rounded-md">View Alchemist's Compendium</button>
+            <!-- Help / Compendium Buttons -->
+            <div class="flex items-center justify-center gap-3 mb-6">
+                <button id="guideButton" class="btn-secondary text-sm py-2 px-4 rounded-md flex items-center gap-2">
+                    <span>Beginner Guide</span>
+                </button>
+                <button id="compendiumButton" class="btn-secondary text-sm py-2 px-4 rounded-md flex items-center gap-2">View Alchemist's Compendium</button>
+                <button id="openSlidesButton" class="btn-primary text-sm py-2 px-4 rounded-md flex items-center gap-2" title="Open the slide deck">
+                    Open Slides ↗
+                </button>
             </div>
 
             <!-- Refined Inputs -->
@@ -488,6 +515,53 @@
             <h2 class="font-medieval text-3xl text-center text-[#f9d71c] mb-6">The Alchemist's Compendium</h2>
             <div id="compendiumContent" class="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
                 <!-- Compendium content will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Beginner Guide Modal -->
+    <div id="guideModal" class="modal">
+        <div class="modal-content">
+            <span id="closeGuideModal" class="close-modal">&times;</span>
+            <h2 class="font-medieval text-3xl text-center text-[#f9d71c] mb-2">Beginner Guide</h2>
+            <p class="text-center mb-4">A friendly primer on Automata and how to use this simulator.</p>
+            <div class="space-y-4 text-sm leading-6 max-h-[65vh] overflow-y-auto pr-2">
+                <div class="p-3 rounded-md bg-[#1f4068] border border-[#4b5a8a]">
+                    <h3 class="font-medieval text-xl text-yellow-300 mb-1">What’s a Turing Machine?</h3>
+                    <ul class="list-disc pl-6 text-gray-200">
+                        <li>A simple model of a computer: it reads a long tape, can write symbols, and move left or right.</li>
+                        <li>It follows rules (δ) that say: “If I see X in state q, write Y, move L/R, go to state q’.”</li>
+                        <li>It stops in Accept (✓) or Reject (✗) when a task is done.</li>
+                    </ul>
+                </div>
+                <div class="p-3 rounded-md bg-[#1f4068] border border-[#4b5a8a]">
+                    <h3 class="font-medieval text-xl text-yellow-300 mb-1">How this maps to crafting</h3>
+                    <ul class="list-disc pl-6 text-gray-200">
+                        <li>Left of # is your inventory; right of # is the recipe you picked.</li>
+                        <li>For each recipe rune, the machine searches inventory for a match.</li>
+                        <li>Found → mark inventory with X (used) and recipe with Y (fulfilled).</li>
+                        <li>All done → writes the output rune (e.g., P) and accepts.</li>
+                    </ul>
+                </div>
+                <div class="p-3 rounded-md bg-[#1f4068] border border-[#4b5a8a]">
+                    <h3 class="font-medieval text-xl text-yellow-300 mb-1">Quick how-to</h3>
+                    <ol class="list-decimal pl-6 text-gray-200">
+                        <li>Drag runes from the palette into any inventory slots.</li>
+                        <li>Select a recipe from the dropdown (see “Will Produce”).</li>
+                        <li>Click Begin Transmutation, then Play or Step.</li>
+                        <li>Watch the highlights: Y = matched recipe, X = used ingredient.</li>
+                        <li>On success, click “Apply Result” to add the crafted rune.</li>
+                    </ol>
+                </div>
+                <div class="p-3 rounded-md bg-[#1f4068] border border-[#4b5a8a]">
+                    <h3 class="font-medieval text-xl text-yellow-300 mb-1">Legend</h3>
+                    <div class="grid grid-cols-2 gap-2 text-gray-200">
+                        <div><strong>_</strong> blank</div>
+                        <div><strong>#</strong> divider</div>
+                        <div><strong>X</strong> used ingredient</div>
+                        <div><strong>Y</strong> fulfilled recipe</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -647,6 +721,9 @@
             const compendiumModal = document.getElementById('compendiumModal');
             const closeModal = document.getElementById('closeModal');
             const compendiumContent = document.getElementById('compendiumContent');
+            const guideButton = document.getElementById('guideButton');
+            const guideModal = document.getElementById('guideModal');
+            const closeGuideModal = document.getElementById('closeGuideModal');
             const inventoryPalette = document.getElementById('inventoryPalette');
             const clearInventory = document.getElementById('clearInventory');
             const recipeSelect = document.getElementById('recipeSelect');
@@ -660,6 +737,7 @@
             const stepCountSpan = document.getElementById('stepCountSpan'); 
             const headPosSpan = document.getElementById('headPosSpan'); 
             const currentRuleSpan = document.getElementById('currentRuleSpan'); 
+            const openSlidesButton = document.getElementById('openSlidesButton');
 
 
             // --- Turing Machine State ---
@@ -918,6 +996,37 @@
                     sounds.playClick();
                     compendiumModal.style.display = 'none';
                 }
+                if (event.target == guideModal) {
+                    sounds.playClick();
+                    guideModal.style.display = 'none';
+                }
+            });
+
+            // Open Slides deck
+            if (openSlidesButton) {
+                openSlidesButton.addEventListener('click', () => {
+                    sounds.playClick();
+                    window.location.href = 'slides.html';
+                });
+            }
+            // Keyboard shortcut: press 'o' to open slides from the app
+            window.addEventListener('keydown', (e) => {
+                const tag = (e.target && e.target.tagName) ? e.target.tagName : '';
+                if (['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
+                if (e.key && e.key.toLowerCase() === 'o') {
+                    e.preventDefault();
+                    window.location.href = 'slides.html';
+                }
+            });
+
+            // Beginner Guide events
+            guideButton.addEventListener('click', () => {
+                sounds.playClick();
+                guideModal.style.display = 'block';
+            });
+            closeGuideModal.addEventListener('click', () => {
+                sounds.playClick();
+                guideModal.style.display = 'none';
             });
 
             clearInventory.addEventListener('click', () => {
